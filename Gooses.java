@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Gooses implements BotAPI {
 
@@ -107,6 +108,7 @@ public class Gooses implements BotAPI {
             if (word.length() == 0) {
                 return;
             }
+            System.out.println("ADDING: " + word);
             Node traverse = this.root;
             for (int pos = 0; pos < word.length(); pos++) {
                 if (!traverse.hasChild(word.charAt(pos))) {
@@ -183,9 +185,9 @@ public class Gooses implements BotAPI {
 
         public HashSet<String> findWords(String frame, char anchor) {
             HashSet<String> words = new HashSet<>();
-            frame = frame.replaceAll("\\W","");
+            frame = frame.replaceAll("\\W", "");
             ArrayList<Character> frameLetters = new ArrayList<>();
-            for(char c : frame.toCharArray()) {
+            for (char c : frame.toCharArray()) {
                 frameLetters.add(c);
             }
             if (anchor == ' ') {
@@ -216,7 +218,7 @@ public class Gooses implements BotAPI {
                 word = word + letter;
             }
 
-            if(anchorNode.isLeaf()) {
+            if (anchorNode.isLeaf()) {
                 words.add(word);
             }
 
@@ -236,18 +238,39 @@ public class Gooses implements BotAPI {
     private GADDAG buildGADDAG() throws FileNotFoundException {
         GADDAG output = new GADDAG();
         Scanner initialize = new Scanner(new File("csw.txt"));
-        while(initialize.hasNext()) {
+        while (initialize.hasNext()) {
             output.GAdd(initialize.nextLine());
         }
         return output;
     }
+
     public void testGADDAG(String frame) {
         long startTime = System.nanoTime();
-        HashSet<String> validWords = gaddag.findWords(frame, ' ');
+        //frame = frame + "_";
+        //frame = "";
+        ArrayList<String> validWords = new ArrayList<String>(gaddag.findWords(frame, ' '));
+        if (frame.contains("_")) {
+            for (char letter = 'A'; letter <= 'Z'; letter++) {
+                String duplicateFrame = frame;
+                System.out.println("LETTER " + letter);
+                duplicateFrame = duplicateFrame.replaceAll("[_]", letter + "");
+                System.out.println("DUPLICATE: " + duplicateFrame);
+                String[] possible = gaddag.findWords(duplicateFrame, ' ').toString().replaceAll("[,]", "").split(" ");
+                for (String string : possible) {
+                    validWords.add(string);
+                }
+            }
+        }
         long elapsedTime = System.nanoTime() - startTime;
-        System.out.println(validWords.toString());
+        ArrayList<String> validUniqueWords = removeDuplicates(validWords);
+        System.out.println(validUniqueWords.toString());
         System.out.println("Time: " + elapsedTime);
     }
+    private ArrayList<String> removeDuplicates(ArrayList<String> input) {
+        ArrayList<String> output = new ArrayList<>(input.stream().distinct().collect(Collectors.toList()));
+        return output;
+    }
+
     public String getCommand() {
         // Add your code here to input your commands
         // Your code must give the command NAME <botname> at the start of the game
