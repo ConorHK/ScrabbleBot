@@ -278,8 +278,12 @@ public class Gooses implements BotAPI {
 		int c = word.getFirstColumn();
 		for (int i = 0; i<word.length(); i++) {
 			int letterValue = board.getSquareCopy(r, c).getTile().getValue();
+			if (newLetterCoords.contains(new Coordinates(r,c))) {
 				wordValue = wordValue + letterValue * board.getSquareCopy(r, c).getLetterMuliplier();
 				wordMultipler = wordMultipler * board.getSquareCopy(r, c).getWordMultiplier();
+			} else {
+				wordValue = wordValue + letterValue;
+			}
 			if (word.isHorizontal()) {
 				c++;
 			} else {
