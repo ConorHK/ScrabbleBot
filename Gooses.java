@@ -270,6 +270,24 @@ public class Gooses implements BotAPI {
         ArrayList<String> output = new ArrayList<>(input.stream().distinct().collect(Collectors.toList()));
         return output;
     }
+    
+	private int getWordPoints(Word word) {
+		int wordValue = 0;
+		int wordMultipler = 1;
+		int r = word.getFirstRow();
+		int c = word.getFirstColumn();
+		for (int i = 0; i<word.length(); i++) {
+			int letterValue = board.getSquareCopy(r, c).getTile().getValue();
+				wordValue = wordValue + letterValue * board.getSquareCopy(r, c).getLetterMuliplier();
+				wordMultipler = wordMultipler * board.getSquareCopy(r, c).getWordMultiplier();
+			if (word.isHorizontal()) {
+				c++;
+			} else {
+				r++;
+			}
+		}
+		return wordValue * wordMultipler;
+	}
 
     public String getCommand() {
         // Add your code here to input your commands
