@@ -1,6 +1,7 @@
 import java.util.Collection;
 import java.util.TreeMap;
 
+
 public class Gooses implements BotAPI {
 
     // The public API of Bot must not change
@@ -81,6 +82,76 @@ public class Gooses implements BotAPI {
         }
     }
     /* END OF NESTED NODE CLASS */
+    
+    private static class Trie {
+    	
+    	static final int ALPHABET_SIZE = 26; 
+    	
+    	static class TrieNode { 
+    		
+    		TrieNode[] children = new TrieNode[ALPHABET_SIZE]; 
+    		// isEndOfWord is true if the node represents end of a word i.e. leaf node
+    		boolean isEndOfWord; 
+
+    		TrieNode(){ 
+    		isEndOfWord = false; 
+
+    		for (int i = 0; i < ALPHABET_SIZE; i++) 
+    		children[i] = null; 
+    		} 
+    		}
+
+    		static TrieNode root;
+    		// If not key present, inserts into trie 
+    		// If the key is prefix of Trie node,  
+    		//  marks leaf node
+    		static void insert(String key){ 
+    			
+    			int length;
+    			int index;
+    			
+    			TrieNode trie = root; 
+    			
+    			length = key.length();
+    			
+    			  for (int level = 0; level < length; level++) 
+    		      { 
+    		          index = key.charAt(level) - 'a'; 
+    		          if (trie.children[index] == null) 
+    		              trie.children[index] = new TrieNode(); 
+    		     
+    		          trie = trie.children[index]; 
+    		      } 
+    			
+    			trie.isEndOfWord = true;
+    		} 
+
+    		// Returns true if key presents in trie, else false 
+    		static boolean search(String key) { 
+    			int length;
+    			int index;
+    			
+    			TrieNode trie = root; 
+    			
+    			length = key.length();
+    			
+    			for(int level = 0; level < length; level++) {
+    				index = key.charAt(level) - 'a';
+    				
+    				if(trie.children[index] == null) {
+    					return false;		
+    				}
+    			
+    				trie = trie.children[index];
+    			} 
+    			return(trie != null && trie.isEndOfWord);
+    			
+    			
+    		} 
+
+    	
+    }
+    /* END OF NESTED TRIE CLASS */
 
     public String getCommand() {
         // Add your code here to input your commands
