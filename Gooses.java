@@ -1,3 +1,5 @@
+import java.util.Collection;
+import java.util.TreeMap;
 
 public class Gooses implements BotAPI {
 
@@ -23,6 +25,63 @@ public class Gooses implements BotAPI {
         turnCount = 0;
     }
 
+    // nested node class for GADDAG data structure
+    private static class Node implements Comparable<Node>{
+        private boolean finite;
+        private char value;
+        public TreeMap<Character, Node> tree = new TreeMap<>();
+
+        public Node(char value) {
+            this.value = value;
+            this.finite = false;
+        }
+
+        // getters and setters
+        public char getValue() {
+            return this.value;
+        }
+        public void setFinite(boolean finite) {
+            this.finite = finite;
+        }
+        public boolean getFinite() {
+            return finite;
+        }
+        public Collection<Character> getKeySet() {
+            return tree.keySet();
+        }
+        public Collection<Node> getChildrenValues(){
+            return tree.values();
+        }
+        public Node getChild(char value) {
+            return tree.get(value);
+        }
+
+        // info methods
+        public boolean hasChild(char value) {
+            return tree.containsKey(value);
+        }
+
+        // modifier methods
+        public void addChild(char value) {
+            tree.put(value, new Node(value));
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+           if(obj instanceof Node){
+               return (this.value == ((Node) obj).getValue());
+           } else {
+               return false;
+           }
+        }
+
+        @Override
+        public int compareTo(Node node) {
+            return this.value - node.value;
+        }
+    }
+    /* END OF NESTED NODE CLASS */
+
     public String getCommand() {
         // Add your code here to input your commands
         // Your code must give the command NAME <botname> at the start of the game
@@ -32,20 +91,7 @@ public class Gooses implements BotAPI {
                 command = "NAME gooses";
                 break;
             case 1:
-                command = "PASS";
-                break;
-            case 2:
-                command = "HELP";
-                break;
-            case 3:
-                command = "SCORE";
-                break;
-            case 4:
-                command = "POOL";
-                break;
-            default:
-                command = "H8 A AN";
-                break;
+                //TODO make move
         }
         turnCount++;
         return command;
