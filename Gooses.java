@@ -19,8 +19,9 @@ public class Gooses implements BotAPI {
 	private int turnCount;
 	private GADDAG gaddag;
 	private Square[][] squares;
-	private LinkedList<Integer> anchorColumns;
-	private LinkedList<Integer> anchorRows;
+	private int[] anchorColumns;
+	private int[] anchorRows;
+	private int anchorSize = 0;
 
 	private static final int[][] LETTER_MULTIPLIER = { { 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1 },
 			{ 1, 1, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1 },
@@ -129,7 +130,7 @@ public class Gooses implements BotAPI {
 			if (word.length() == 0) {
 				return;
 			}
-			System.out.println("ADDING: " + word);
+			//System.out.println("ADDING: " + word);
 			Node traverse = this.root;
 			for (int pos = 0; pos < word.length(); pos++) {
 				if (!traverse.hasChild(word.charAt(pos))) {
@@ -347,8 +348,9 @@ public class Gooses implements BotAPI {
 
 	public void getAnchors() {
 
-		anchorColumns = new LinkedList<Integer>();
-		anchorRows = new LinkedList<Integer>();
+		anchorColumns =  new int[225];
+		anchorRows = new int[225];
+		
 
 		//searching board for tiles and then searching surrounding spaces for empty spaces which are known as anchor points 
 		for (int row = 0; row < squares.length; row++) {
@@ -356,25 +358,39 @@ public class Gooses implements BotAPI {
 				if (squares[row][column] != null) {
 
 					if (squares[row + 1][column] == null) {
-						anchorColumns.add(column);
-						anchorRows.add(row + 1);
+						anchorColumns[anchorSize] = column;
+						anchorRows[anchorSize] =(row + 1);
+						anchorSize++;
 					}
 					if (squares[row - 1][column] == null) {
-						anchorColumns.add(column);
-						anchorRows.add(row - 1);
+						anchorColumns[anchorSize] = column;
+						anchorRows[anchorSize] =(row - 1);
+						anchorSize++;
 					}
 					if (squares[row][column + 1] == null) {
-						anchorColumns.add(column + 1);
-						anchorRows.add(row);
+						anchorColumns[anchorSize] = column + 1;
+						anchorRows[anchorSize] = row;
+						anchorSize++;
 					}
 					if (squares[row][column - 1] == null) {
-						anchorColumns.add(column - 1);
-						anchorRows.add(row);
+						anchorColumns[anchorSize] = column - 1;
+						anchorRows[anchorSize] =  row;
+						anchorSize++;
 					}
 
 				}
 			}
 		}
+	}
+	
+	public boolean isAnchor(int row,int column) {
+		
+		for(int i = 0;i<anchorSize;i++) {
+			if(anchorColumns[i] == row && anchorRows[i] == column ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
