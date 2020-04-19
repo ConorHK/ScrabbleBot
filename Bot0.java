@@ -31,18 +31,6 @@ public class Bot0 implements BotAPI {
             case 0:
                 command = "NAME Bot0";
                 break;
-            case 1:
-                command = "PASS";
-                break;
-            case 2:
-                command = "HELP";
-                break;
-            case 3:
-                command = "SCORE";
-                break;
-            case 4:
-                command = "POOL";
-                break;
             default:
                 command = "H8 A AN";
                 break;
