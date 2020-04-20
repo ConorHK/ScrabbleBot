@@ -321,7 +321,18 @@ public class Gooses implements BotAPI {
         }
 
         public String toString() {
-            return this.places.toString();
+            StringBuilder command = new StringBuilder();
+            command.append((char)(places.get(0).getColumn() + 'A'));
+            command.append(places.get(0).getRow() + 1);
+            if(places.get(0).getRow() == places.get(1).getRow()) {
+                command.append(" A ");
+            } else {
+                command.append(" D ");
+            }
+            for(Place place : places) {
+                command.append(place.letter);
+            }
+            return command.toString();
         }
 
         @Override
@@ -333,7 +344,6 @@ public class Gooses implements BotAPI {
     // nested node class for GADDAG data structure
     private static class Node {
         private Node[] children;
-        //byte[] transitions;
         private char[] letters;
         private char[] end;
         byte numChildren = 0;
@@ -341,7 +351,6 @@ public class Gooses implements BotAPI {
 
         public Node() {
             this.children = new Node[1];
-            //this.transitions = new byte[1];
             this.letters = new char[1];
             this.end = new char[1];
         }
@@ -646,6 +655,7 @@ public class Gooses implements BotAPI {
         System.out.println("Next row: " + highestScoringMove.places.get(1).getRow() + " Next column: " + highestScoringMove.places.get(1).getColumn());
         System.out.print(highestWord + "\t" + highestScoringPoints + " points\n");
         System.out.println("Time taken: " + searchTime + "ms.");
+        System.out.println("Command: " + highestScoringMove.toString());
         return highestScoringMove;
     }
 
@@ -716,17 +726,21 @@ public class Gooses implements BotAPI {
     }
 
     private void generateMoves(List<Move> moves) {
-        ArrayList<Word> wordsToCheck = new ArrayList<>();
+        ArrayList<Word> wordsToCheck = new ArrayList<Word>();
 
-        for (Move convert : moves) {
+        for (int i = 0; i < moves.size(); i++) {
+            Move convert = moves.get(i);
             int row = convert.places.get(0).getRow();
             int column = convert.places.get(0).getColumn();
             char rowLetter = (char) (row);
             boolean isHorizontal;
-            isHorizontal = convert.places.get(0).row == convert.places.get(1).row;
+            if (convert.places.get(0).row == convert.places.get(1).row) {
+                isHorizontal = true;
+            } else
+                isHorizontal = false;
 
             StringBuilder sb = new StringBuilder();
-            sb.append(convert);
+            sb.append(moves.get(i));
             String letters = sb.toString();
             letters = letters.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\, ", "");
 
@@ -734,10 +748,10 @@ public class Gooses implements BotAPI {
             wordsToCheck.add(insert);
         }
 
-        ArrayList<Word> wordsToCompare = new ArrayList<>();
-        for (Word word : wordsToCheck) {
-            if (!wordsToCompare.toString().contains(word.toString()))
-                wordsToCompare.add(word);
+        ArrayList<Word> wordsToCompare = new ArrayList<Word>();
+        for (int k = 0; k < wordsToCheck.size(); k++) {
+            if (!wordsToCompare.toString().contains(wordsToCheck.get(k).toString()))
+                wordsToCompare.add(wordsToCheck.get(k));
         }
 
         System.out.println("duplicates?" + wordsToCheck.size());
@@ -745,9 +759,9 @@ public class Gooses implements BotAPI {
 
         for (int j = 0; j < wordsToCompare.size(); j++) {
 
-            ArrayList<Word> subWordsToCheck = new ArrayList<>();
+            ArrayList<Word> subWordsToCheck = new ArrayList<Word>();
             subWordsToCheck.add(wordsToCompare.get(j));
-            if (!dictionary.areWords(subWordsToCheck)) {
+            if (dictionary.areWords(subWordsToCheck) == false) {
                 wordsToCompare.removeAll(subWordsToCheck);
 
             }
