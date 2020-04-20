@@ -24,6 +24,13 @@ public class Gooses implements BotAPI {
         this.gaddag = new GADDAG();
     }
 
+    public static int boardBoundaries(int position, boolean top) {
+        if(top) {
+            return Math.max(position -1, 0);
+        } else {
+            return Math.min(position + 1, Board.BOARD_SIZE - 1);
+        }
+    }
     //nested extension for square class
     private static class SquareExtended {
         public Set<Character> legalHorizontalSet, legalVerticalSet;
@@ -515,7 +522,7 @@ public class Gooses implements BotAPI {
 
         public void findRowMovesNextPosition(int offset, int anchorRow, int anchorColumn, char letter, Move workingMove, ArrayList<Character> frame, Node currNode, Node nextNode, BoardAPI board, List<Move> moves, boolean reverse, BoardExtended boardExtended) {
             if (offset <= 0) { //if making prefix
-                if (currNode.isEnd(letter) && !board.getSquareCopy(anchorRow + offset - 1, anchorColumn).isOccupied() && !board.getSquareCopy(anchorRow + 1, anchorColumn).isOccupied()) { // if its a valid move
+                if (currNode.isEnd(letter) && !board.getSquareCopy(boardBoundaries(anchorRow + offset - 1,true), anchorColumn).isOccupied() && !board.getSquareCopy(boardBoundaries(anchorRow + 1, false), anchorColumn).isOccupied()) { // if its a valid move
                     if (frame.isEmpty())
                         workingMove.usesAllTiles = true;
                     moves.add(workingMove);
@@ -525,18 +532,18 @@ public class Gooses implements BotAPI {
                     findRowMoves(offset - 1, anchorRow, anchorColumn, workingMove, frame, nextNode, board, moves, reverse, boardExtended);
 
                     nextNode = nextNode.getChild('$');
-                    if (nextNode != null && !board.getSquareCopy(anchorRow + offset - 1, anchorColumn).isOccupied()) { // generate suffixes
+                    if (nextNode != null && !board.getSquareCopy(boardBoundaries(anchorRow + offset - 1, true), anchorColumn).isOccupied()) { // generate suffixes
                         findRowMoves(1, anchorRow, anchorColumn, workingMove, frame, nextNode, board, moves, false, boardExtended);
                     }
                 }
             } else if (offset > 0) {//if making suffix
-                if (currNode.isEnd(letter) && !board.getSquareCopy(anchorRow + offset + 1, anchorColumn).isOccupied()) { // if its a valid move
+                if (currNode.isEnd(letter) && !board.getSquareCopy(boardBoundaries(anchorRow + offset + 1, false), anchorColumn).isOccupied()) { // if its a valid move
                     if (frame.isEmpty()) {
                         workingMove.usesAllTiles = true;
                     }
                     moves.add(workingMove);
                 }
-                if (nextNode != null && !board.getSquareCopy(anchorRow + offset + 1, anchorColumn).isOccupied()) { // generate suffixes
+                if (nextNode != null && !board.getSquareCopy(boardBoundaries(anchorRow + offset + 1, false), anchorColumn).isOccupied()) { // generate suffixes
                     currNode = nextNode;
                     findRowMoves(offset + 1, anchorRow, anchorColumn, workingMove, frame, currNode, board, moves, reverse, boardExtended);
                 }
@@ -570,7 +577,7 @@ public class Gooses implements BotAPI {
 
         public void findColumnMovesNextPosition(int offset, int anchorRow, int anchorColumn, char letter, Move workingMove, ArrayList<Character> rack, Node currNode, Node nextNode, BoardAPI board, List<Move> moves, boolean reverse, BoardExtended boardExtended) {
             if (offset <= 0) {    //if making prefix
-                if (currNode.isEnd(letter) && !board.getSquareCopy(anchorRow + offset - 1, anchorColumn).isOccupied() && !board.getSquareCopy(anchorRow, anchorColumn + 1).isOccupied()) {
+                if (currNode.isEnd(letter) && !board.getSquareCopy(boardBoundaries(anchorRow + offset - 1, true), anchorColumn).isOccupied() && !board.getSquareCopy(anchorRow, boardBoundaries(anchorColumn + 1, false)).isOccupied()) {
                     if (rack.isEmpty())
                         workingMove.usesAllTiles = true;
                     moves.add(workingMove);
@@ -578,18 +585,18 @@ public class Gooses implements BotAPI {
                 if (nextNode != null) { // generate prefixes
                     findColumnMoves(offset - 1, anchorRow, anchorColumn, workingMove, rack, nextNode, board, moves, reverse, boardExtended);
                     nextNode = nextNode.getChild('$');
-                    if (nextNode != null && !board.getSquareCopy(anchorRow, anchorColumn + offset - 1).isOccupied()) { // generate suffixes
+                    if (nextNode != null && !board.getSquareCopy(anchorRow, boardBoundaries(anchorColumn + offset - 1, true)).isOccupied()) { // generate suffixes
                         findColumnMoves(1, anchorRow, anchorColumn, workingMove, rack, nextNode, board, moves, false, boardExtended);
                     }
                 }
             } else if (offset > 0) { // generate suffixes
-                if (currNode.isEnd(letter) && !board.getSquareCopy(anchorRow, anchorColumn + offset + 1).isOccupied()) {
+                if (currNode.isEnd(letter) && !board.getSquareCopy(anchorRow, boardBoundaries(anchorColumn + offset + 1, false)).isOccupied()) {
                     if (rack.isEmpty()) {
                         workingMove.usesAllTiles = true;
                     }
                     moves.add(workingMove);
                 }
-                if (nextNode != null && !board.getSquareCopy(anchorRow, anchorColumn + offset + 1).isOccupied()) { // generate suffixes
+                if (nextNode != null && !board.getSquareCopy(anchorRow, boardBoundaries(anchorColumn + offset + 1, false)).isOccupied()) { // generate suffixes
                     currNode = nextNode;
                     findColumnMoves(offset + 1, anchorRow, anchorColumn, workingMove, rack, currNode, board, moves, reverse, boardExtended);
                 }
@@ -608,7 +615,7 @@ public class Gooses implements BotAPI {
         return output;
     }
 
-    public void testGADDAG(String frame, BoardExtended boardExtended) {
+    public Move testGADDAG(String frame, BoardExtended boardExtended) {
         ArrayList<Character> frameArray = parseFrame(frame);
         boardExtended.getCrossSets(boardExtended, gaddag.getRoot(), this.board);
         boardExtended.getAnchors();
@@ -636,8 +643,10 @@ public class Gooses implements BotAPI {
         System.out.println("\n" + moves.size() + " moves found (including duplicates).");
         System.out.println("Highest scoring move: ");
         System.out.println("Start row: " + highestScoringMove.places.get(0).getRow() + " Start column: " + highestScoringMove.places.get(0).getColumn());
+        System.out.println("Next row: " + highestScoringMove.places.get(1).getRow() + " Next column: " + highestScoringMove.places.get(1).getColumn());
         System.out.print(highestWord + "\t" + highestScoringPoints + " points\n");
         System.out.println("Time taken: " + searchTime + "ms.");
+        return highestScoringMove;
     }
 
     private int calculateScore(Move move, BoardExtended boardExtended, BoardAPI board) {
@@ -655,38 +664,50 @@ public class Gooses implements BotAPI {
                 int up = Math.max(place.getColumn() - 1, 0);
                 int down = Math.min(place.getColumn() + 1, Board.BOARD_SIZE - 1);
 
-                while (board.getSquareCopy(left, place.getColumn()).isOccupied()) {
-                    connectingWordsScore += board.getSquareCopy(left, place.getColumn()).getTile().getValue();
+                while (board.getSquareCopy(boardBoundaries(left, false), boardBoundaries(place.getColumn(), false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(left, false), boardBoundaries(place.getColumn(), false)).getTile().getValue();
                     left--;
                     connectingWords = true;
+                    if(boardBoundaries(left, false) == 14) {
+                        break;
+                    }
                 }
-                while (board.getSquareCopy(right, place.getColumn()).isOccupied()) {
-                    connectingWordsScore += board.getSquareCopy(right, place.getColumn()).getTile().getValue();
+                while (board.getSquareCopy(boardBoundaries(right, false), boardBoundaries(place.getColumn(), false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(right, false), boardBoundaries(place.getColumn(), false)).getTile().getValue();
                     right++;
                     connectingWords = true;
+                    if(boardBoundaries(right, false) == 14) {
+                        break;
+                    }
                 }
-                while (board.getSquareCopy(place.getRow(), up).isOccupied()) {
-                    connectingWordsScore += board.getSquareCopy(place.getRow(), up).getTile().getValue();
+                while (board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up, false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up,false)).getTile().getValue();
                     up++;
                     connectingWords = true;
+                    if(boardBoundaries(up, false) == 14) {
+                        break;
+                    }
                 }
-                while (board.getSquareCopy(place.getRow(), down).isOccupied()) {
-                    connectingWordsScore += board.getSquareCopy(place.getRow(), down).getTile().getValue();
+                while (board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(down, false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(down, false)).getTile().getValue();
                     down++;
                     connectingWords = true;
+                    if(boardBoundaries(down, false) == 14) {
+                        break;
+                    }
                 }
-                connectingWordsScore += placement.getValue() * board.getSquareCopy(place.getRow(), place.getColumn()).getLetterMuliplier();
+                connectingWordsScore += placement.getValue() * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getLetterMuliplier();
 
                 if (connectingWords) {
-                    connectingWordsScore = connectingWordsScore * board.getSquareCopy(place.getRow(), place.getColumn()).getWordMultiplier();
+                    connectingWordsScore = connectingWordsScore * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getWordMultiplier();
                     total += connectingWordsScore;
                 }
 
-                wordMultiplier *= board.getSquareCopy(place.getRow(), place.getColumn()).getWordMultiplier();
+                wordMultiplier *= board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getWordMultiplier();
             } else {
-                wordMultiplier = wordMultiplier * board.getSquareCopy(place.getRow(), place.getColumn()).getWordMultiplier();
+                wordMultiplier = wordMultiplier * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getWordMultiplier();
             }
-            wordScore += placement.getValue() * board.getSquareCopy(place.getRow(), place.getColumn()).getLetterMuliplier();
+            wordScore += placement.getValue() * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getLetterMuliplier();
         }
         if (move.usesAllTiles) {
             total += 50;
@@ -705,9 +726,8 @@ public class Gooses implements BotAPI {
                 break;
             default:
                 BoardExtended boardExtended = new BoardExtended(this.board);
-                testGADDAG(me.getFrameAsString(), boardExtended);
-                System.exit(1);
-                // TODO make move
+                Move move = testGADDAG(me.getFrameAsString(), boardExtended);
+                break;
         }
         turnCount++;
         return command;
