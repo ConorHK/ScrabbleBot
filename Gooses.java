@@ -715,6 +715,71 @@ public class Gooses implements BotAPI {
         return total + wordScore * wordMultiplier;
     }
 
+    private void generateMoves(List<Move> moves) {
+        ArrayList<Word> wordsToCheck = new ArrayList<>();
+
+        for (Move convert : moves) {
+            int row = convert.places.get(0).getRow();
+            int column = convert.places.get(0).getColumn();
+            char rowLetter = (char) (row);
+            boolean isHorizontal;
+            isHorizontal = convert.places.get(0).row == convert.places.get(1).row;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(convert);
+            String letters = sb.toString();
+            letters = letters.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\, ", "");
+
+            Word insert = new Word(rowLetter, column, isHorizontal, letters);
+            wordsToCheck.add(insert);
+        }
+
+        ArrayList<Word> wordsToCompare = new ArrayList<>();
+        for (Word word : wordsToCheck) {
+            if (!wordsToCompare.toString().contains(word.toString()))
+                wordsToCompare.add(word);
+        }
+
+        System.out.println("duplicates?" + wordsToCheck.size());
+        System.out.println("no duplicates?" + wordsToCompare.size());
+
+        for (int j = 0; j < wordsToCompare.size(); j++) {
+
+            ArrayList<Word> subWordsToCheck = new ArrayList<>();
+            subWordsToCheck.add(wordsToCompare.get(j));
+            if (!dictionary.areWords(subWordsToCheck)) {
+                wordsToCompare.removeAll(subWordsToCheck);
+
+            }
+            subWordsToCheck.clear();
+        }
+
+        System.out.println("Filtered words: " + wordsToCompare.toString());
+        System.out.println("Filtered words: " + wordsToCompare.size());
+
+        commandGen(wordsToCompare);
+
+    }
+
+    private String[] commandGen(ArrayList<Word> list) {
+
+        String[] commands = new String[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            String direction = "D";
+            if (list.get(i).isHorizontal()) {
+                direction = "A";
+            }
+            int row = list.get(i).getRow();
+            char letterRow = (char)row;
+            String letter = Character.toString(letterRow);
+            System.out.println(letter);
+            commands[i] = letter + list.get(i).getColumn() + " " + direction + " " + list.get(i);
+            System.out.println("command" + i + ": " + commands[i]);
+        }
+
+        return commands;
+    }
+
 	public String getCommand() {
 		// Add your code here to input your commands
 		// Your code must give the command NAME <botname> at the start of the game
