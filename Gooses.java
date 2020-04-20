@@ -25,12 +25,13 @@ public class Gooses implements BotAPI {
     }
 
     public static int boardBoundaries(int position, boolean top) {
-        if(top) {
-            return Math.max(position -1, 0);
+        if (top) {
+            return Math.max(position - 1, 0);
         } else {
             return Math.min(position + 1, Board.BOARD_SIZE - 1);
         }
     }
+
     //nested extension for square class
     private static class SquareExtended {
         public Set<Character> legalHorizontalSet, legalVerticalSet;
@@ -301,9 +302,9 @@ public class Gooses implements BotAPI {
 
     // nested class for potential moves
     private static class Move implements Iterable<Place> {
-        List<Place> places;
-        int points;
-        boolean usesAllTiles;
+        private List<Place> places;
+        private int points;
+        private boolean usesAllTiles;
 
         public Move() {
             this.places = new ArrayList<>();
@@ -322,15 +323,15 @@ public class Gooses implements BotAPI {
 
         public String toString() {
             StringBuilder command = new StringBuilder();
-            command.append((char)(places.get(0).getColumn() + 'A'));
+            command.append((char) (places.get(0).getColumn() + 'A'));
             command.append(places.get(0).getRow() + 1);
-            if(places.get(0).getRow() == places.get(1).getRow()) {
+            if (places.get(0).getRow() == places.get(1).getRow()) {
                 command.append(" A ");
             } else {
                 command.append(" D ");
             }
-            for(Place place : places) {
-                command.append(place.letter);
+            for(Place p : places) {
+                command.append(p.letter);
             }
             return command.toString();
         }
@@ -531,7 +532,7 @@ public class Gooses implements BotAPI {
 
         public void findRowMovesNextPosition(int offset, int anchorRow, int anchorColumn, char letter, Move workingMove, ArrayList<Character> frame, Node currNode, Node nextNode, BoardAPI board, List<Move> moves, boolean reverse, BoardExtended boardExtended) {
             if (offset <= 0) { //if making prefix
-                if (currNode.isEnd(letter) && !board.getSquareCopy(boardBoundaries(anchorRow + offset - 1,true), anchorColumn).isOccupied() && !board.getSquareCopy(boardBoundaries(anchorRow + 1, false), anchorColumn).isOccupied()) { // if its a valid move
+                if (currNode.isEnd(letter) && !board.getSquareCopy(boardBoundaries(anchorRow + offset - 1, true), anchorColumn).isOccupied() && !board.getSquareCopy(boardBoundaries(anchorRow + 1, false), anchorColumn).isOccupied()) { // if its a valid move
                     if (frame.isEmpty())
                         workingMove.usesAllTiles = true;
                     moves.add(workingMove);
@@ -639,7 +640,7 @@ public class Gooses implements BotAPI {
                 word.append(place.letter);
             }
             ArrayList<Word> check = new ArrayList<>();
-            Word maxWord = new Word(0,0, true, word.toString());
+            Word maxWord = new Word(0, 0, true, word.toString());
             check.add(maxWord);
             int score = calculateScore(move, boardExtended, this.board);
             if (score > highestScoringPoints && dictionary.areWords(check)) {
@@ -678,7 +679,7 @@ public class Gooses implements BotAPI {
                     connectingWordsScore += board.getSquareCopy(boardBoundaries(left, false), boardBoundaries(place.getColumn(), false)).getTile().getValue();
                     left--;
                     connectingWords = true;
-                    if(boardBoundaries(left, false) == 14) {
+                    if (boardBoundaries(left, false) == 14) {
                         break;
                     }
                 }
@@ -686,15 +687,15 @@ public class Gooses implements BotAPI {
                     connectingWordsScore += board.getSquareCopy(boardBoundaries(right, false), boardBoundaries(place.getColumn(), false)).getTile().getValue();
                     right++;
                     connectingWords = true;
-                    if(boardBoundaries(right, false) == 14) {
+                    if (boardBoundaries(right, false) == 14) {
                         break;
                     }
                 }
                 while (board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up, false)).isOccupied()) {
-                    connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up,false)).getTile().getValue();
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up, false)).getTile().getValue();
                     up++;
                     connectingWords = true;
-                    if(boardBoundaries(up, false) == 14) {
+                    if (boardBoundaries(up, false) == 14) {
                         break;
                     }
                 }
@@ -702,7 +703,7 @@ public class Gooses implements BotAPI {
                     connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(down, false)).getTile().getValue();
                     down++;
                     connectingWords = true;
-                    if(boardBoundaries(down, false) == 14) {
+                    if (boardBoundaries(down, false) == 14) {
                         break;
                     }
                 }
@@ -774,137 +775,136 @@ public class Gooses implements BotAPI {
         commandGen(wordsToCompare);
 
     }
-    
-    public Move getBestMove(String frame,BoardExtended boardExtended) {
-    	ArrayList<Character> frameArray = parseFrame(frame);
+
+    private List<Move> validMoves(List<Move> possibleMoves) {
+        List<Move> output = new ArrayList<>();
+        Frame frame = new Frame();
+
+        // constructing frame from string
+        ArrayList<Tile> tiles = new ArrayList<>();
+        String frameStringClean = me.getFrameAsString();
+        frameStringClean = frameStringClean.substring(1, frameStringClean.length() - 1);
+        frameStringClean = frameStringClean.replaceAll(", ", "");
+        for(char c : frameStringClean.toCharArray()) {
+            tiles.add(new Tile(c));
+        }
+        frame.addTiles(tiles);
+
+        // constructing word from move
+        for(Move m : possibleMoves) {
+            StringBuilder wordString = new StringBuilder();
+            for(Place p: m) {
+                wordString.append(p.letter);
+            }
+            Word word = new Word(m.places.get(0).getRow(), m.places.get(0).getColumn(), (m.places.get(0).getRow() == m.places.get(1).getRow()), wordString.toString());
+            ArrayList<Word> wordArrayList = new ArrayList<>();
+            if(dictionary.areWords(wordArrayList) && board.isLegalPlay(frame, word)) {
+                output.add(m);
+            }
+        }
+        return output;
+    }
+    public Move getBestMove(String frame, BoardExtended boardExtended) {
+        ArrayList<Character> frameArray = parseFrame(frame);
         boardExtended.getCrossSets(boardExtended, gaddag.getRoot(), this.board);
         boardExtended.getAnchors();
-        List<Move> moves = this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board);
-        
+        List<Move> moves = validMoves(this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board));
+
         Move bestMove = null;
         int bestMoveScore = 0;
-        List<Place> bestMovePlaces ;
-        
+        List<Place> bestMovePlaces;
+
         int[][] VCMix = {
-  		  {0, 0, -1, -2, -3, -4, -5},
-  		  {-1, 1, 1, 0, -1, -2},
-  		  {-2, 0, 2, 2, 1},
-  		  {-3, -1, 1, 3},
-  		  {-4, -2, 0},
-  		  {-5, -3},
-  		  {-6}
-  		};
-        
-        for(Move move: moves) {
-        	int tempScore = calculateScore(move, boardExtended, board);
-        	List<Place> tempPlaces = move.places;
-        	
-        	if(frame.contains("Q") || frame.contains("U")) {
-        		boolean isQ = false;
-        		boolean isU = false;
-        		for(int i = 0;i<tempPlaces.size();i++) {
-        			
-        			if(tempPlaces.get(i).toString() == "Q") {
-        				isQ = true;
-        			}
-        			
-        			if(tempPlaces.get(i).toString() == "U") {
-        				isU = true;
-        			}
-        		}
-        		
-        		
-        		if(isQ && isU)
-        		tempScore += 10;
-        	}
-        	
-        	
-        	 frameArray = parseFrame(frame);
-        		
-        		for(int i = 0;i<tempPlaces.size();i++) {
-        			for (int j = 0; j < frameArray.size(); j++) {
-						
-        				if(tempPlaces.get(i).toString().toCharArray()[0] == frameArray.get(j) ) {
-        					
-        					frameArray.remove(j);
-        				}
-					}
-        		}
-       
-        		int vowels = 0;
-        		if(frameArray.contains('A')) {
-        			vowels++;
-        		}
-        		if(frameArray.contains('I')) {
-        			vowels++;
-        		}
-        		if(frameArray.contains('O')) {
-        			vowels++;
-        		}
-        		if(frameArray.contains('U')) {
-        			vowels++;
-        		}
-        		if(frameArray.contains('E')) {
-        			vowels++;
-        		}
-        		
-        		tempScore += VCMix[vowels][frameArray.size()-vowels];
-        		
-        		StringBuilder word = new StringBuilder();
-                for (Place place : move) {
-                    word.append(place.letter);
+                {0, 0, -1, -2, -3, -4, -5},
+                {-1, 1, 1, 0, -1, -2},
+                {-2, 0, 2, 2, 1},
+                {-3, -1, 1, 3},
+                {-4, -2, 0},
+                {-5, -3},
+                {-6}
+        };
+
+        for (Move move : moves) {
+            int tempScore = calculateScore(move, boardExtended, board);
+            List<Place> tempPlaces = move.places;
+
+            if (frame.contains("Q") || frame.contains("U")) {
+                boolean isQ = false;
+                boolean isU = false;
+                for (int i = 0; i < tempPlaces.size(); i++) {
+
+                    if (tempPlaces.get(i).toString() == "Q") {
+                        isQ = true;
+                    }
+
+                    if (tempPlaces.get(i).toString() == "U") {
+                        isU = true;
+                    }
                 }
-        		
-        		ArrayList<Word> check = new ArrayList<>();
-                Word maxWord = new Word(0,0, true, word.toString());
-                check.add(maxWord);
-        		
-        		if(tempScore > bestMoveScore && dictionary.areWords(check)) {
-        			bestMoveScore = tempScore;
-        			bestMove = move;
-        			bestMovePlaces = move.places;
-        			System.out.println("-----------------------------------------------------------");
-        			System.out.println(bestMoveScore);
-        			System.out.println(frameArray.toString());
-        			System.out.println(word.toString());
-        			System.out.println(getMoveCommand(bestMove));
-        			
-        		}
-        	
-        	
+
+
+                if (isQ && isU)
+                    tempScore += 10;
+            }
+
+
+            frameArray = parseFrame(frame);
+
+            for (int i = 0; i < tempPlaces.size(); i++) {
+                for (int j = 0; j < frameArray.size(); j++) {
+
+                    if (tempPlaces.get(i).toString().toCharArray()[0] == frameArray.get(j)) {
+
+                        frameArray.remove(j);
+                    }
+                }
+            }
+
+            int vowels = 0;
+            if (frameArray.contains('A')) {
+                vowels++;
+            }
+            if (frameArray.contains('I')) {
+                vowels++;
+            }
+            if (frameArray.contains('O')) {
+                vowels++;
+            }
+            if (frameArray.contains('U')) {
+                vowels++;
+            }
+            if (frameArray.contains('E')) {
+                vowels++;
+            }
+
+            tempScore += VCMix[vowels][frameArray.size() - vowels];
+
+            StringBuilder word = new StringBuilder();
+            for (Place place : move) {
+                word.append(place.letter);
+            }
+
+            ArrayList<Word> check = new ArrayList<>();
+            Word maxWord = new Word(0, 0, true, word.toString());
+            check.add(maxWord);
+
+            if (tempScore > bestMoveScore && dictionary.areWords(check)) {
+                bestMoveScore = tempScore;
+                bestMove = move;
+                bestMovePlaces = move.places;
+                System.out.println("-----------------------------------------------------------");
+                System.out.println(bestMoveScore);
+                System.out.println(frameArray.toString());
+                System.out.println(word.toString());
+                System.out.println(bestMove.toString());
+
+            }
+
+
         }
-        
+
         return bestMove;
-    	
-    }
-    
-public String getMoveCommand(Move move) {
-    	
-    	char direction;
-    	
-    	int firstRow = move.places.get(0).row;
-    	int firstColumn = move.places.get(0).column;
-    	
-    	int secondRow = move.places.get(1).row;
-    	
-    	if(firstRow == secondRow) {
-    		
-    		direction = 'A';
-    	} else {
-    		direction = 'D';
-    	}
-    	
-    	
-    	StringBuilder word = new StringBuilder();
-        for (Place place : move) {
-            word.append(place.letter);
-        }		
-        
-        char column = (char) ('A' + firstColumn);
-    			
-    	
-    	
-    	return  Character.toString(column) + firstRow + " " + direction + " " + word.toString().toUpperCase(); 
+
     }
 
     private String[] commandGen(ArrayList<Word> list) {
@@ -916,7 +916,7 @@ public String getMoveCommand(Move move) {
                 direction = "A";
             }
             int row = list.get(i).getRow();
-            char letterRow = (char)row;
+            char letterRow = (char) row;
             String letter = Character.toString(letterRow);
             System.out.println(letter);
             commands[i] = letter + list.get(i).getColumn() + " " + direction + " " + list.get(i);
@@ -926,24 +926,28 @@ public String getMoveCommand(Move move) {
         return commands;
     }
 
-	public String getCommand() {
-		// Add your code here to input your commands
-		// Your code must give the command NAME <botname> at the start of the game
+    public String getCommand() {
+        // Add your code here to input your commands
+        // Your code must give the command NAME <botname> at the start of the game
 
-		String command = "";
-		switch (turnCount) {
-		case 0:
-			command = "NAME gooses";
-			break;
-		default:
-			BoardExtended boardExtended = new BoardExtended(this.board);
+        String command = "";
+        switch (turnCount) {
+            case 0:
+                command = "NAME gooses";
+                break;
+            case 5:
+                command = "CHALLENGE";
+                break;
+            default:
+                BoardExtended boardExtended = new BoardExtended(this.board);
 //			testGADDAG(me.getFrameAsString(), boardExtended);
 //			System.exit(1);
-			// TODO make move
-			
-			command = getMoveCommand(getBestMove(me.getFrameAsString(), boardExtended));
-		}
-		turnCount++;
-		return command;
-	}
+                // TODO make move
+
+                command = getBestMove(me.getFrameAsString(), boardExtended).toString();
+                break;
+        }
+        turnCount++;
+        return command;
+    }
 }
