@@ -715,36 +715,22 @@ public class Gooses implements BotAPI {
         return total + wordScore * wordMultiplier;
     }
 
-    private String createCommand(Move move) {
-        StringBuilder command = new StringBuilder();
-        command.append((char)(move.places.get(0).getColumn() + 'A'));
-        command.append(move.places.get(0).getRow()-1);
-        if(move.places.get(0).getRow() == move.places.get(1).getRow()) {
-            command.append(" A ");
-        } else {
-            command.append(" D ");
-        }
-        for(Place p : move) {
-            command.append(p.letter);
-        }
-        return command.toString();
-    }
-    public String getCommand() {
-        // Add your code here to input your commands
-        // Your code must give the command NAME <botname> at the start of the game
+	public String getCommand() {
+		// Add your code here to input your commands
+		// Your code must give the command NAME <botname> at the start of the game
 
-        String command = "";
-        switch (turnCount) {
-            case 0:
-                command = "NAME gooses";
-                break;
-            default:
-                BoardExtended boardExtended = new BoardExtended(this.board);
-                Move move = testGADDAG(me.getFrameAsString(), boardExtended);
-                command = createCommand(move);
-                break;
-        }
-        turnCount++;
-        return command;
-    }
+		String command = "";
+		switch (turnCount) {
+		case 0:
+			command = "NAME gooses";
+			break;
+		default:
+			BoardExtended boardExtended = new BoardExtended(this.board);
+			testGADDAG(me.getFrameAsString(), boardExtended);
+			System.exit(1);
+			// TODO make move
+		}
+		turnCount++;
+		return command;
+	}
 }
