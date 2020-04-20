@@ -760,6 +760,138 @@ public class Gooses implements BotAPI {
         commandGen(wordsToCompare);
 
     }
+    
+    public Move getBestMove(String frame,BoardExtended boardExtended) {
+    	ArrayList<Character> frameArray = parseFrame(frame);
+        boardExtended.getCrossSets(boardExtended, gaddag.getRoot(), this.board);
+        boardExtended.getAnchors();
+        List<Move> moves = this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board);
+        
+        Move bestMove = null;
+        int bestMoveScore = 0;
+        List<Place> bestMovePlaces ;
+        
+        int[][] VCMix = {
+  		  {0, 0, -1, -2, -3, -4, -5},
+  		  {-1, 1, 1, 0, -1, -2},
+  		  {-2, 0, 2, 2, 1},
+  		  {-3, -1, 1, 3},
+  		  {-4, -2, 0},
+  		  {-5, -3},
+  		  {-6}
+  		};
+        
+        for(Move move: moves) {
+        	int tempScore = calculateScore(move, boardExtended, board);
+        	List<Place> tempPlaces = move.places;
+        	
+        	if(frame.contains("Q") || frame.contains("U")) {
+        		boolean isQ = false;
+        		boolean isU = false;
+        		for(int i = 0;i<tempPlaces.size();i++) {
+        			
+        			if(tempPlaces.get(i).toString() == "Q") {
+        				isQ = true;
+        			}
+        			
+        			if(tempPlaces.get(i).toString() == "U") {
+        				isU = true;
+        			}
+        		}
+        		
+        		
+        		if(isQ && isU)
+        		tempScore += 10;
+        	}
+        	
+        	
+        	 frameArray = parseFrame(frame);
+        		
+        		for(int i = 0;i<tempPlaces.size();i++) {
+        			for (int j = 0; j < frameArray.size(); j++) {
+						
+        				if(tempPlaces.get(i).toString().toCharArray()[0] == frameArray.get(j) ) {
+        					
+        					frameArray.remove(j);
+        				}
+					}
+        		}
+       
+        		int vowels = 0;
+        		if(frameArray.contains('A')) {
+        			vowels++;
+        		}
+        		if(frameArray.contains('I')) {
+        			vowels++;
+        		}
+        		if(frameArray.contains('O')) {
+        			vowels++;
+        		}
+        		if(frameArray.contains('U')) {
+        			vowels++;
+        		}
+        		if(frameArray.contains('E')) {
+        			vowels++;
+        		}
+        		
+        		tempScore += VCMix[vowels][frameArray.size()-vowels];
+        		
+        		StringBuilder word = new StringBuilder();
+                for (Place place : move) {
+                    word.append(place.letter);
+                }
+        		
+        		ArrayList<Word> check = new ArrayList<>();
+                Word maxWord = new Word(0,0, true, word.toString());
+                check.add(maxWord);
+        		
+        		if(tempScore > bestMoveScore && dictionary.areWords(check)) {
+        			bestMoveScore = tempScore;
+        			bestMove = move;
+        			bestMovePlaces = move.places;
+        			System.out.println("-----------------------------------------------------------");
+        			System.out.println(bestMoveScore);
+        			System.out.println(frameArray.toString());
+        			System.out.println(word.toString());
+        			System.out.println(getMoveCommand(bestMove));
+        			
+        		}
+        	
+        	
+        }
+        
+        return bestMove;
+    	
+    }
+    
+public String getMoveCommand(Move move) {
+    	
+    	char direction;
+    	
+    	int firstRow = move.places.get(0).row;
+    	int firstColumn = move.places.get(0).column;
+    	
+    	int secondRow = move.places.get(1).row;
+    	
+    	if(firstRow == secondRow) {
+    		
+    		direction = 'A';
+    	} else {
+    		direction = 'D';
+    	}
+    	
+    	
+    	StringBuilder word = new StringBuilder();
+        for (Place place : move) {
+            word.append(place.letter);
+        }		
+        
+        char column = (char) ('A' + firstColumn);
+    			
+    	
+    	
+    	return  Character.toString(column) + firstRow + " " + direction + " " + word.toString().toUpperCase(); 
+    }
 
     private String[] commandGen(ArrayList<Word> list) {
 
@@ -791,9 +923,11 @@ public class Gooses implements BotAPI {
 			break;
 		default:
 			BoardExtended boardExtended = new BoardExtended(this.board);
-			testGADDAG(me.getFrameAsString(), boardExtended);
-			System.exit(1);
+//			testGADDAG(me.getFrameAsString(), boardExtended);
+//			System.exit(1);
 			// TODO make move
+			
+			command = getMoveCommand(getBestMove(me.getFrameAsString(), boardExtended));
 		}
 		turnCount++;
 		return command;
