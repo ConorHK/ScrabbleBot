@@ -92,6 +92,7 @@ public class Scrabble {
 	public void play(Word word) {
 		board.place(getCurrentPlayer().getFrame(), word);
 		latestWords = board.getAllWords(word);
+		System.out.println(latestWords.toString());
 		latestPoints = board.getAllPoints(latestWords);
 		getCurrentPlayer().addPoints(latestPoints);
 		latestRefill = getCurrentPlayer().getFrame().refill(pool);
