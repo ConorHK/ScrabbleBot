@@ -14,7 +14,7 @@ public class Bots {
         String[] botNames = new String[Scrabble.NUM_PLAYERS];
 //        if (params.size() < Scrabble.NUM_PLAYERS) {
             botNames[0] = "Gooses";
-            botNames[1] = "Gooses";
+            botNames[1] = "Bot1";
 //        } else {
 //            for (int i = 0; i < Scrabble.NUM_PLAYERS; i++) {
 //                boolean found = false;
