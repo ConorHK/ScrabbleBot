@@ -17,7 +17,6 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
-    private ArrayList<Word> connectedWords;
     private ArrayList<Coordinates> newLetterCoords;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
@@ -28,7 +27,6 @@ public class Gooses implements BotAPI {
         this.dictionary = dictionary;
         turnCount = 0;
         this.gaddag = new GADDAG();
-        this.connectedWords = new ArrayList<>();
     }
 
     public static int boardBoundaries(int position, boolean top) {
@@ -1098,6 +1096,7 @@ public class Gooses implements BotAPI {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
                 } catch (NullPointerException ex) {
                 
+                	
                     command = getExchangeCommand();
                 }
                 break;
