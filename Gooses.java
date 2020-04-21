@@ -3,6 +3,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.corba.se.spi.ior.MakeImmutable;
+
 public class Gooses implements BotAPI {
 
     // The public API of Bot must not change
@@ -17,6 +19,7 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
+    private Move lastMoveMade;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
@@ -661,6 +664,8 @@ public class Gooses implements BotAPI {
         System.out.print(highestWord + "\t" + highestScoringPoints + " points\n");
         System.out.println("Time taken: " + searchTime + "ms.");
         System.out.println("Command: " + highestScoringMove.toString());
+
+
         return highestScoringMove;
     }
 
@@ -1058,10 +1063,11 @@ public class Gooses implements BotAPI {
         String lastPlay = lastPlayArr[0];
         return lastPlay;
     }
-    private Move moveFromLast() {
+    private void moveFromLast() {
     	String lastPlay = getLastMove();
     	if(!lastPlay.matches("^[A-O]\\d{1,2}\\s[A,D]\\s[A-Z]*")) {
     		System.out.println("Not a valid move command");
+    		
     	}
     	Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
     	Matcher match = pat.matcher(lastPlay);
@@ -1101,8 +1107,8 @@ public class Gooses implements BotAPI {
         		col++;
         	}
         }
-        
-       return lastMoveMade;  	
+       System.out.println("mooove" + lastMoveMade.toString());
+       
     }
     public String getCommand() {
         // Add your code here to input your commands
@@ -1116,7 +1122,7 @@ public class Gooses implements BotAPI {
             case 5:
                 command = "CHALLENGE";
                 break;
-            default:
+                default:
                 getLastMove();
                 BoardExtended boardExtended = new BoardExtended(this.board);
                 try {
