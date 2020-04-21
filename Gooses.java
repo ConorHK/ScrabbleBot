@@ -1,5 +1,7 @@
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Gooses implements BotAPI {
 
@@ -10,6 +12,7 @@ public class Gooses implements BotAPI {
     // It may only inspect the state of the board and the player objects
 
     private PlayerAPI me;
+    private UserInterfaceAPI ui;
     private BoardAPI board;
     private DictionaryAPI dictionary;
     private int turnCount;
@@ -19,6 +22,7 @@ public class Gooses implements BotAPI {
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
         this.me = me;
+        this.ui = ui;
         this.board = board;
         this.dictionary = dictionary;
         this.ui = ui;
@@ -1012,11 +1016,58 @@ public class Gooses implements BotAPI {
         return bestMove;
 
     }
+    
 
     private String getLastMove() {
         String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
         String lastPlay = lastPlayArr[0];
         return lastPlay;
+    }
+    private Move moveFromLast() {
+    	String lastPlay = getLastMove();
+    	if(!lastPlay.matches("^[A-O]\\d{1,2}\\s[A,D]\\s[A-Z]*")) {
+    		System.out.println("Not a valid move command");
+    	}
+    	Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
+    	Matcher match = pat.matcher(lastPlay);
+    	Boolean doubleDigits = false;
+    	if(match.find() && match.group().length() == 3) {
+    		doubleDigits = true;;
+    	}
+    	
+    	lastPlay = lastPlay.replaceAll(" ", "");
+    	char row = lastPlay.toLowerCase().charAt(0);
+        int rowInt = row - 'a' + 1;
+        int col;
+        String colS;
+        String word;
+        char direction;
+        if(doubleDigits) {
+        	  colS = lastPlay.substring(1,3);
+        	  col = Integer.parseInt(colS);
+              direction = lastPlay.charAt(4);
+              word = lastPlay.substring(4);
+              
+        }
+        else {
+        	colS = lastPlay.substring(1,2);
+            col = Integer.parseInt(colS);
+            direction = lastPlay.charAt(2);
+            word = lastPlay.substring(3);
+        }
+        
+        Move lastMoveMade = new Move();
+        for(int i = 0;i<word.length();i++) {
+        	lastMoveMade.addPlay(rowInt, col, direction);
+        	if(direction == 'A'){
+        		rowInt++;
+        	}
+        	else {
+        		col++;
+        	}
+        }
+        
+       return lastMoveMade;  	
     }
     public String getCommand() {
         // Add your code here to input your commands
