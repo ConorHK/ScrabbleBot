@@ -13,20 +13,15 @@ public class Gooses implements BotAPI {
     private BoardAPI board;
     private DictionaryAPI dictionary;
     private int turnCount;
-    private UserInterfaceAPI ui;
     private GADDAG gaddag;
-    private ArrayList<Coordinates> newLetterCoords;
-    private Board boardCopy;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
         this.me = me;
         this.board = board;
         this.dictionary = dictionary;
-        this.ui = ui;
         turnCount = 0;
         this.gaddag = new GADDAG();
-        this.boardCopy = new Board();
     }
 
     public static int boardBoundaries(int position, boolean top) {
@@ -807,8 +802,8 @@ public class Gooses implements BotAPI {
         }
         return output;
     }
+    ArrayList<Word> connectedWords = new ArrayList<Word>();
     public boolean validateWordPlacement(Move move) {
-        ArrayList<Word> connectedWords = new ArrayList<Word>();
         for(Place place:move) {
             if(place.getColumn() < 0 || place.getColumn() >= 15) {
                 return false;
@@ -891,9 +886,9 @@ public class Gooses implements BotAPI {
             }
             if (move.places.get(move.places.size() - 1).getRow() + 1 < 15) {
                 for (int i = 0; move.places.get(move.places.size() - 1).getRow() + i < 15; i++) {
-                    if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + 1, move.places.get(move.places.size()-1).getColumn()).isOccupied()) {
+                    if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + i, move.places.get(move.places.size()-1).getColumn()).isOccupied()) {
                         down.append(
-                                board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + 1, move.places.get(move.places.size()-1).getColumn()).getTile().getLetter());
+                                board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + i, move.places.get(move.places.size()-1).getColumn()).getTile().getLetter());
                     } else {
                         break;
                     }
@@ -1007,7 +1002,7 @@ public class Gooses implements BotAPI {
             Word maxWord = new Word(0, 0, true, word.toString());
             check.add(maxWord);*/
 
-            if (tempScore > bestMoveScore) {
+            if (tempScore > bestMoveScore && dictionary.areWords(check) &&validateWordPlacement(move)) {
                 bestMoveScore = tempScore;
                 bestMove = move;
                 /*System.out.println("-----------------------------------------------------------");
@@ -1016,8 +1011,14 @@ public class Gooses implements BotAPI {
                 System.out.println(word.toString());
                 System.out.println(bestMove.toString());*/
             }
+
+
         }
+
+        validateWordPlacement(bestMove);
+        System.out.println(connectedWords.toString());
         return bestMove;
+
     }
 
     private String getLastMove() {
