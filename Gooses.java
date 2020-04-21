@@ -863,13 +863,7 @@ public class Gooses implements BotAPI {
         if (!lastPlay.matches("^[A-O]\\d{1,2}\\s[A,D]\\s[A-Z]*")) {
             System.out.println("Not a valid move command");
         }
-        Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
-        Matcher match = pat.matcher(lastPlay);
-        boolean doubleDigits = false;
-        if (match.find() && match.group().length() == 3) {
-            doubleDigits = true;
-        }
-
+        Boolean doubleDigits = doubleDigits(lastPlay);
         lastPlay = lastPlay.replaceAll(" ", "");
         char row = lastPlay.toLowerCase().charAt(0);
         int rowInt = row - 'a' + 1;
@@ -901,6 +895,57 @@ public class Gooses implements BotAPI {
         }
 
         return lastMoveMade;
+    }
+
+    private Boolean doubleDigits(String toMatch) {
+    	 Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
+         Matcher match = pat.matcher(toMatch);
+         if (match.find() && match.group().length() == 3) {
+            return true;
+         }
+
+    	return false;
+    }
+
+    private Boolean challenge(Move lastMove) {
+
+    	String check = getLastMove();
+    	Boolean doubleDigits = doubleDigits(check);
+    	String word;
+    	check = check.replaceAll(" ", "");
+        char row = check.toLowerCase().charAt(0);
+        int rowInt = row - 'a' + 1;
+        int col;
+        String colS;
+        char direction;
+        Boolean dir;
+
+    	  if (doubleDigits) {
+    		  colS = check.substring(1, 3);
+              col = Integer.parseInt(colS);
+              direction = check.charAt(4);
+              word = check.substring(4);
+
+          }
+    	  else
+    		  colS = check.substring(1, 2);
+              col = Integer.parseInt(colS);
+              direction = check.charAt(2);
+              word = check.substring(3);
+
+    	  if(direction == 'A') {
+    		  dir = true;
+    	  }
+    	  else
+    		  dir = false;
+
+    	  Word words = new Word(row, col, dir, word);
+    	  ArrayList<Word> toCheck = getAllWords(words);
+
+    	  if(!dictionary.areWords(toCheck)){
+    		  return true;
+    	  }
+    	return false;
     }
 
     public String getCommand() {
