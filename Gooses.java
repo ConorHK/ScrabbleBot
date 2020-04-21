@@ -897,6 +897,91 @@ public class Gooses implements BotAPI {
         return lastMoveMade;
     }
 
+    public String getExchangeCommand() {
+    	 ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
+
+    	 ArrayList<Character> vowels = new ArrayList<Character>();
+    	 ArrayList<Character> consonants = new ArrayList<Character>();
+    	 StringBuilder command = new StringBuilder("EXCHANGE ");
+
+    	 for(int i = 0;i<frameArray.size();i++) {
+    		 if(frameArray.get(i) == 'A') {
+    			 vowels.add('A');
+    		 }
+    		 else if(frameArray.get(i) == 'E') {
+    			 vowels.add('E');
+    		 }
+    		 else if(frameArray.get(i) == 'I') {
+    			 vowels.add('I');
+    		 }
+    		 else if(frameArray.get(i) == 'O') {
+    			 vowels.add('O');
+    		 }
+    		 else if(frameArray.get(i) == 'U') {
+    			 vowels.add('U');
+    		 } else {
+    			 consonants.add(frameArray.get(i));
+    		 }
+    	 }
+
+    	 if(vowels.size() > consonants.size()) {
+    		 int counter = vowels.size();
+    		 while(counter > consonants.size()) {
+    			 command.append(vowels.remove(0));
+    			 counter--;
+    		 }
+
+    	 } else {
+    		 int counter = consonants.size();
+    		 while(counter > vowels.size()) {
+    			 command.append(consonants.remove(0));
+    			 counter--;
+    		 }
+    	 }
+
+    	 return command.toString();
+
+    }
+
+//    private Move moveFromLast() {
+//        String lastPlay = getLastMove();
+//        if (!lastPlay.matches("^[A-O]\\d{1,2}\\s[A,D]\\s[A-Z]*")) {
+//            System.out.println("Not a valid move command");
+//        }
+//        Boolean doubleDigits = doubleDigits(lastPlay);
+//        lastPlay = lastPlay.replaceAll(" ", "");
+//        char row = lastPlay.toLowerCase().charAt(0);
+//        int rowInt = row - 'a' + 1;
+//        int col;
+//        String colS;
+//        String word;
+//        char direction;
+//        if (doubleDigits) {
+//            colS = lastPlay.substring(1, 3);
+//            col = Integer.parseInt(colS);
+//            direction = lastPlay.charAt(4);
+//            word = lastPlay.substring(4);
+//
+//        } else {
+//            colS = lastPlay.substring(1, 2);
+//            col = Integer.parseInt(colS);
+//            direction = lastPlay.charAt(2);
+//            word = lastPlay.substring(3);
+//        }
+//
+//        Move lastMoveMade = new Move();
+//        for (int i = 0; i < word.length(); i++) {
+//            lastMoveMade.addPlay(rowInt, col, direction);
+//            if (direction == 'A') {
+//                rowInt++;
+//            } else {
+//                col++;
+//            }
+//        }
+//
+//        return lastMoveMade;
+//    }
+
     private Boolean doubleDigits(String toMatch) {
     	 Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
          Matcher match = pat.matcher(toMatch);
@@ -963,7 +1048,9 @@ public class Gooses implements BotAPI {
                 try {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
                 } catch (NullPointerException ex) {
-                    command = "PASS";
+
+
+                    command = getExchangeCommand();
                 }
                 break;
         }
@@ -971,3 +1058,4 @@ public class Gooses implements BotAPI {
         return command;
     }
 }
+
