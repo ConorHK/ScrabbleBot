@@ -17,7 +17,6 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
-    private UserInterfaceAPI ui;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
@@ -25,7 +24,6 @@ public class Gooses implements BotAPI {
         this.ui = ui;
         this.board = board;
         this.dictionary = dictionary;
-        this.ui = ui;
         turnCount = 0;
         this.gaddag = new GADDAG();
     }
@@ -810,6 +808,9 @@ public class Gooses implements BotAPI {
     }
     ArrayList<Word> connectedWords = new ArrayList<Word>();
     public boolean validateWordPlacement(Move move) {
+
+        connectedWords = new ArrayList<Word>();
+
         for(Place place:move) {
             if(place.getColumn() < 0 || place.getColumn() >= 15) {
                 return false;
@@ -818,6 +819,25 @@ public class Gooses implements BotAPI {
                 return false;
             }
         }
+        /*Frame frame = new Frame();
+        // constructing frame from string
+        ArrayList<Tile> tiles = new ArrayList<>();
+        String frameStringClean = me.getFrameAsString();
+        frameStringClean = frameStringClean.substring(1, frameStringClean.length() - 1);
+        frameStringClean = frameStringClean.replaceAll(", ", "");
+        for(char c : frameStringClean.toCharArray()) {
+            tiles.add(new Tile(c));
+        }
+        frame.addTiles(tiles);
+        //Constructing Word
+        StringBuilder wordString = new StringBuilder();
+        for(Place p: move) {
+            wordString.append(p.letter);
+        }
+        Word legalWord = new Word(move.places.get(0).getRow(), move.places.get(0).getColumn(), (move.places.get(0).getRow() == move.places.get(1).getRow()), wordString.toString());
+        if(!board.isLegalPlay(frame, legalWord)) {
+            return false;
+        }*/
         if (move.places.get(0).getRow() == move.places.get(1).getRow()) {
             StringBuilder across = new StringBuilder();
             for (Place place : move) {
@@ -832,6 +852,8 @@ public class Gooses implements BotAPI {
                     }
                 }
             }
+
+
             if (move.places.get(move.places.size() - 1).getColumn() + 1 < 15) {
                 for (int i = 0; move.places.get(move.places.size() - 1).getColumn() + i < 15; i++) {
                     if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow(), move.places.get(move.places.size()-1).getColumn() + i).isOccupied()) {
@@ -844,7 +866,10 @@ public class Gooses implements BotAPI {
             }
             if(across.length() > 0)
                 connectedWords.add(new Word(0, 0, true, across.toString()));
-            for (Place place : move) {
+
+            for (int j = 0;j<move.places.size();j++) {
+
+                Place place = move.places.get(j);
                 //Horizontal Word
                 StringBuilder word = new StringBuilder(place.toString());
                 if( place.getRow() + 1 < 15) {
@@ -878,8 +903,11 @@ public class Gooses implements BotAPI {
             }
         } else  {
             StringBuilder down = new StringBuilder();
+
+
             for (Place place : move) {
                 down.append(place.letter);
+
             }
             if (move.places.get(0).getRow() - 1 >= 0) {
                 for (int i = 0; move.places.get(0).getRow() - i > 0; i++) {
@@ -902,7 +930,11 @@ public class Gooses implements BotAPI {
             }
             if(down.length() > 0)
                 connectedWords.add(new Word(0, 0, true, down.toString()));
-            for (Place place : move) {
+
+
+            for (int j = 0;j<move.places.size();j++) {
+
+                Place place = move.places.get(j);
                 //Horizontal Word
                 StringBuilder word = new StringBuilder(place.toString());
                 if( place.getColumn() + 1 < 15) {
@@ -931,6 +963,9 @@ public class Gooses implements BotAPI {
                     connectedWords.add(new Word(0, 0, true, word.toString()));
             }
         }
+
+
+
         return dictionary.areWords(connectedWords);
     }
 
