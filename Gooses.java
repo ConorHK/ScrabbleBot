@@ -14,12 +14,14 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
+    private UserInterfaceAPI ui;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
         this.me = me;
         this.board = board;
         this.dictionary = dictionary;
+        this.ui = ui;
         turnCount = 0;
         this.gaddag = new GADDAG();
     }
@@ -992,17 +994,7 @@ public class Gooses implements BotAPI {
             }
 
             tempScore += VCMix[vowels][frameArray.size() - vowels];
-
-            /*StringBuilder word = new StringBuilder();
-            for (Place place : move) {
-                word.append(place.letter);
-            }
-
-            ArrayList<Word> check = new ArrayList<>();
-            Word maxWord = new Word(0, 0, true, word.toString());
-            check.add(maxWord);*/
-
-            if (tempScore > bestMoveScore && dictionary.areWords(check) &&validateWordPlacement(move)) {
+            if (tempScore > bestMoveScore) {
                 bestMoveScore = tempScore;
                 bestMove = move;
                 /*System.out.println("-----------------------------------------------------------");
