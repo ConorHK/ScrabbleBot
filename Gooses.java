@@ -800,14 +800,18 @@ public class Gooses implements BotAPI {
             }
             Word word = new Word(m.places.get(0).getRow(), m.places.get(0).getColumn(), (m.places.get(0).getRow() == m.places.get(1).getRow()), wordString.toString());
             ArrayList<Word> wordArrayList = new ArrayList<>();
-            if(dictionary.areWords(wordArrayList) && board.isLegalPlay(frame, word) && validateWordPlacement(m)) {
-                output.add(m);
+            if(dictionary.areWords(wordArrayList) && board.isLegalPlay(frame, word) ) {
+                if(validateWordPlacement(m))
+            	output.add(m);
             }
         }
         return output;
     }
+    ArrayList<Word> connectedWords = new ArrayList<Word>();
     public boolean validateWordPlacement(Move move) {
-        ArrayList<Word> connectedWords = new ArrayList<Word>();
+    	
+    	connectedWords = new ArrayList<Word>(); 
+    	
         for(Place place:move) {
             if(place.getColumn() < 0 || place.getColumn() >= 15) {
                 return false;
@@ -849,6 +853,8 @@ public class Gooses implements BotAPI {
                     }
                 }
             }
+            
+            
             if (move.places.get(move.places.size() - 1).getColumn() + 1 < 15) {
                 for (int i = 0; move.places.get(move.places.size() - 1).getColumn() + i < 15; i++) {
                     if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow(), move.places.get(move.places.size()-1).getColumn() + i).isOccupied()) {
@@ -861,6 +867,7 @@ public class Gooses implements BotAPI {
             }
             if(across.length() > 0)
                 connectedWords.add(new Word(0, 0, true, across.toString()));
+            
             for (Place place : move) {
                 //Horizontal Word
                 StringBuilder word = new StringBuilder(place.toString());
@@ -895,8 +902,11 @@ public class Gooses implements BotAPI {
             }
         } else  {
             StringBuilder down = new StringBuilder();
+           
+            
             for (Place place : move) {
                 down.append(place.letter);
+            
             }
             if (move.places.get(0).getRow() - 1 >= 0) {
                 for (int i = 0; move.places.get(0).getRow() - i > 0; i++) {
@@ -909,9 +919,9 @@ public class Gooses implements BotAPI {
             }
             if (move.places.get(move.places.size() - 1).getRow() + 1 < 15) {
                 for (int i = 0; move.places.get(move.places.size() - 1).getRow() + i < 15; i++) {
-                    if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + 1, move.places.get(move.places.size()-1).getColumn()).isOccupied()) {
+                    if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + i, move.places.get(move.places.size()-1).getColumn()).isOccupied()) {
                         down.append(
-                                board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + 1, move.places.get(move.places.size()-1).getColumn()).getTile().getLetter());
+                                board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + i, move.places.get(move.places.size()-1).getColumn()).getTile().getLetter());
                     } else {
                         break;
                     }
@@ -919,6 +929,8 @@ public class Gooses implements BotAPI {
             }
             if(down.length() > 0)
                 connectedWords.add(new Word(0, 0, true, down.toString()));
+            
+            
             for (Place place : move) {
                 //Horizontal Word
                 StringBuilder word = new StringBuilder(place.toString());
@@ -948,6 +960,9 @@ public class Gooses implements BotAPI {
                     connectedWords.add(new Word(0, 0, true, word.toString()));
             }
         }
+        
+       
+        
         return dictionary.areWords(connectedWords);
     }
 
@@ -1025,20 +1040,22 @@ public class Gooses implements BotAPI {
             Word maxWord = new Word(0, 0, true, word.toString());
             check.add(maxWord);
 
-            if (tempScore > bestMoveScore && dictionary.areWords(check)) {
+            if (tempScore > bestMoveScore && dictionary.areWords(check) &&validateWordPlacement(move)) {
                 bestMoveScore = tempScore;
                 bestMove = move;
-                System.out.println("-----------------------------------------------------------");
-                System.out.println(bestMoveScore);
-                System.out.println(frameArray.toString());
-                System.out.println(word.toString());
-                System.out.println(bestMove.toString());
+//                System.out.println("-----------------------------------------------------------");
+//                System.out.println(bestMoveScore);
+//                System.out.println(frameArray.toString());
+//                System.out.println(word.toString());
+//                System.out.println(bestMove.toString());
 
             }
 
 
         }
 
+        validateWordPlacement(bestMove);
+        System.out.println(connectedWords.toString());
         return bestMove;
 
     }
