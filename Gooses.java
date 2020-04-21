@@ -1,6 +1,8 @@
 import java.io.*;
 import java.util.*;
 
+import sun.swing.UIAction;
+
 public class Gooses implements BotAPI {
 
     // The public API of Bot must not change
@@ -10,6 +12,7 @@ public class Gooses implements BotAPI {
     // It may only inspect the state of the board and the player objects
 
     private PlayerAPI me;
+    private UserInterfaceAPI ui;
     private BoardAPI board;
     private DictionaryAPI dictionary;
     private int turnCount;
@@ -17,6 +20,7 @@ public class Gooses implements BotAPI {
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
+    	this.ui = ui;
         this.me = me;
         this.board = board;
         this.dictionary = dictionary;
@@ -1037,6 +1041,12 @@ public class Gooses implements BotAPI {
 
         return bestMove;
 
+    }
+    
+    private String getLastMove() {
+    	String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
+    	String lastPlay = lastPlayArr[0];
+    	return lastPlay;
     }
 
     public String getCommand() {
