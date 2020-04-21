@@ -17,8 +17,6 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
-    private ArrayList<Word> connectedWords;
-    private ArrayList<Coordinates> newLetterCoords;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
@@ -28,7 +26,6 @@ public class Gooses implements BotAPI {
         this.dictionary = dictionary;
         turnCount = 0;
         this.gaddag = new GADDAG();
-        this.connectedWords = new ArrayList<>();
     }
 
     public static int boardBoundaries(int position, boolean top) {
@@ -623,22 +620,6 @@ public class Gooses implements BotAPI {
     /* END OF NESTED GADDAG CLASS */
 
     /* Connecting word Validation: */
-    public void place(Word word) {
-        newLetterCoords = new ArrayList<>();
-        int r = word.getFirstRow();
-        int c = word.getFirstColumn();
-        for (int i = 0; i < word.length(); i++) {
-            if (!board.getSquareCopy(r, c).isOccupied()) {
-                newLetterCoords.add(new Coordinates(r, c));
-            }
-            if (word.isHorizontal()) {
-                c++;
-            } else {
-                r++;
-            }
-        }
-    }
-
     public ArrayList<Word> getAllWords(Word mainWord) {
         ArrayList<Word> words = new ArrayList<>();
         words.add(mainWord);
@@ -659,13 +640,10 @@ public class Gooses implements BotAPI {
     }
 
     private boolean isAdditionalWord(int r, int c, boolean isHorizontal) {
-        if ((isHorizontal &&
+        return (isHorizontal &&
                 ((r > 0 && board.getSquareCopy(r - 1, c).isOccupied()) || (r < Board.BOARD_SIZE - 1 && board.getSquareCopy(r + 1, c).isOccupied()))) ||
                 (!isHorizontal &&
-                        ((c > 0 && board.getSquareCopy(r, c - 1).isOccupied()) || (c < Board.BOARD_SIZE - 1 && board.getSquareCopy(r, c + 1).isOccupied())))) {
-            return true;
-        }
-        return false;
+                        ((c > 0 && board.getSquareCopy(r, c - 1).isOccupied()) || (c < Board.BOARD_SIZE - 1 && board.getSquareCopy(r, c + 1).isOccupied())));
     }
 
     private Word getAdditionalWord(int mainWordRow, int mainWordCol, boolean mainWordIsHorizontal, Square[][] possibleBoard) {
@@ -686,18 +664,18 @@ public class Gooses implements BotAPI {
             firstCol++;
         }
         // collect the letters by moving down or right
-        String letters = "";
+        StringBuilder letters = new StringBuilder();
         int r = firstRow;
         int c = firstCol;
         while (r< Board.BOARD_SIZE && c< Board.BOARD_SIZE && possibleBoard[r][c].isOccupied()) {
-            letters = letters + possibleBoard[r][c].getTile().getLetter();
+            letters.append(possibleBoard[r][c].getTile().getLetter());
             if (mainWordIsHorizontal) {
                 r++;
             } else {
                 c++;
             }
         }
-        return new Word (firstRow, firstCol, !mainWordIsHorizontal, letters);
+        return new Word (firstRow, firstCol, !mainWordIsHorizontal, letters.toString());
     }
     private Square[][] duplicateBoard(Word word) {
         Square[][] output = new Square[15][15];
@@ -790,10 +768,6 @@ public class Gooses implements BotAPI {
 
         // constructing word from move
         for (Move m : possibleMoves) {
-            StringBuilder wordString = new StringBuilder();
-            for (Place p : m) {
-                wordString.append(p.letter);
-            }
             ArrayList<Word> checkWord = new ArrayList<>();
             checkWord.add(makeWordFromMove(m));
             if (board.isLegalPlay(frame, makeWordFromMove(m)) && dictionary.areWords(checkWord)) {
@@ -803,16 +777,6 @@ public class Gooses implements BotAPI {
         return output;
     }
 
-    private boolean makeMove(Move move) {
-        Word word = makeWordFromMove(move);
-        place(word);
-        ArrayList<Word> connectingWords = getAllWords(word);
-        if (dictionary.areWords(connectingWords)) {
-            return true;
-        }
-        return false;
-    }
-
     public Move getBestMove(String frame, BoardExtended boardExtended) {
         ArrayList<Character> frameArray = parseFrame(frame);
         boardExtended.getCrossSets(boardExtended, gaddag.getRoot(), this.board);
@@ -820,7 +784,6 @@ public class Gooses implements BotAPI {
         List<Move> moves = validMoves(this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board));
         Move bestMove = null;
         int bestMoveScore = 0;
-        List<Place> bestMovePlaces;
         int[][] VCMix = {
                 {0, 0, -1, -2, -3, -4, -5},
                 {-1, 1, 1, 0, -1, -2},
@@ -830,7 +793,6 @@ public class Gooses implements BotAPI {
                 {-5, -3},
                 {-6}
         };
-        ArrayList<Word> bestMoveConnect = new ArrayList<>();
         for (Move move : moves) {
             ArrayList<Word> allWords = getAllWords(makeWordFromMove(move));
             if (dictionary.areWords(allWords)) {
@@ -839,13 +801,13 @@ public class Gooses implements BotAPI {
                 if (frame.contains("Q") || frame.contains("U")) {
                     boolean isQ = false;
                     boolean isU = false;
-                    for (int i = 0; i < tempPlaces.size(); i++) {
+                    for (Place tempPlace : tempPlaces) {
 
-                        if (tempPlaces.get(i).toString() == "Q") {
+                        if (tempPlace.toString().equals("Q")) {
                             isQ = true;
                         }
 
-                        if (tempPlaces.get(i).toString() == "U") {
+                        if (tempPlace.toString().equals("U")) {
                             isU = true;
                         }
                     }
@@ -853,10 +815,10 @@ public class Gooses implements BotAPI {
                         tempScore += 10;
                 }
                 frameArray = parseFrame(frame);
-                for (int i = 0; i < tempPlaces.size(); i++) {
+                for (Place tempPlace : tempPlaces) {
                     for (int j = 0; j < frameArray.size(); j++) {
 
-                        if (tempPlaces.get(i).toString().toCharArray()[0] == frameArray.get(j)) {
+                        if (tempPlace.toString().toCharArray()[0] == frameArray.get(j)) {
 
                             frameArray.remove(j);
                         }
@@ -883,20 +845,17 @@ public class Gooses implements BotAPI {
                 if (tempScore > bestMoveScore) {
                     bestMoveScore = tempScore;
                     bestMove = move;
-                    bestMoveConnect = allWords;
                 }
             }
         }
-        System.out.println(bestMoveConnect.toString());
         return bestMove;
 
     }
 
 
     private String getLastMove() {
-        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
-        String lastPlay = lastPlayArr[0];
-        return lastPlay;
+        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2).split("\n");
+        return lastPlayArr[0];
     }
 
     private Move moveFromLast() {
@@ -906,10 +865,9 @@ public class Gooses implements BotAPI {
         }
         Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
         Matcher match = pat.matcher(lastPlay);
-        Boolean doubleDigits = false;
+        boolean doubleDigits = false;
         if (match.find() && match.group().length() == 3) {
             doubleDigits = true;
-            ;
         }
 
         lastPlay = lastPlay.replaceAll(" ", "");
@@ -949,13 +907,10 @@ public class Gooses implements BotAPI {
         // Add your code here to input your commands
         // Your code must give the command NAME <botname> at the start of the game
 
-        String command = "";
+        String command;
         switch (turnCount) {
             case 0:
                 command = "NAME gooses";
-                break;
-            case 5:
-                command = "CHALLENGE";
                 break;
             default:
                 getLastMove();
