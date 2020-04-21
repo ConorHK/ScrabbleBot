@@ -13,15 +13,20 @@ public class Gooses implements BotAPI {
     private BoardAPI board;
     private DictionaryAPI dictionary;
     private int turnCount;
+    private UserInterfaceAPI ui;
     private GADDAG gaddag;
+    private ArrayList<Coordinates> newLetterCoords;
+    private Board boardCopy;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
         this.me = me;
         this.board = board;
         this.dictionary = dictionary;
+        this.ui = ui;
         turnCount = 0;
         this.gaddag = new GADDAG();
+        this.boardCopy = new Board();
     }
 
     public static int boardBoundaries(int position, boolean top) {
@@ -812,25 +817,6 @@ public class Gooses implements BotAPI {
                 return false;
             }
         }
-        /*Frame frame = new Frame();
-        // constructing frame from string
-        ArrayList<Tile> tiles = new ArrayList<>();
-        String frameStringClean = me.getFrameAsString();
-        frameStringClean = frameStringClean.substring(1, frameStringClean.length() - 1);
-        frameStringClean = frameStringClean.replaceAll(", ", "");
-        for(char c : frameStringClean.toCharArray()) {
-            tiles.add(new Tile(c));
-        }
-        frame.addTiles(tiles);
-        //Constructing Word
-        StringBuilder wordString = new StringBuilder();
-        for(Place p: move) {
-            wordString.append(p.letter);
-        }
-        Word legalWord = new Word(move.places.get(0).getRow(), move.places.get(0).getColumn(), (move.places.get(0).getRow() == move.places.get(1).getRow()), wordString.toString());
-        if(!board.isLegalPlay(frame, legalWord)) {
-            return false;
-        }*/
         if (move.places.get(0).getRow() == move.places.get(1).getRow()) {
             StringBuilder across = new StringBuilder();
             for (Place place : move) {
@@ -1012,33 +998,33 @@ public class Gooses implements BotAPI {
 
             tempScore += VCMix[vowels][frameArray.size() - vowels];
 
-            StringBuilder word = new StringBuilder();
+            /*StringBuilder word = new StringBuilder();
             for (Place place : move) {
                 word.append(place.letter);
             }
 
             ArrayList<Word> check = new ArrayList<>();
             Word maxWord = new Word(0, 0, true, word.toString());
-            check.add(maxWord);
+            check.add(maxWord);*/
 
-            if (tempScore > bestMoveScore && dictionary.areWords(check)) {
+            if (tempScore > bestMoveScore) {
                 bestMoveScore = tempScore;
                 bestMove = move;
-                System.out.println("-----------------------------------------------------------");
+                /*System.out.println("-----------------------------------------------------------");
                 System.out.println(bestMoveScore);
                 System.out.println(frameArray.toString());
                 System.out.println(word.toString());
-                System.out.println(bestMove.toString());
-
+                System.out.println(bestMove.toString());*/
             }
-
-
         }
-
         return bestMove;
-
     }
 
+    private String getLastMove() {
+        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
+        String lastPlay = lastPlayArr[0];
+        return lastPlay;
+    }
     public String getCommand() {
         // Add your code here to input your commands
         // Your code must give the command NAME <botname> at the start of the game
@@ -1052,6 +1038,7 @@ public class Gooses implements BotAPI {
                 command = "CHALLENGE";
                 break;
             default:
+                getLastMove();
                 BoardExtended boardExtended = new BoardExtended(this.board);
                 try {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
