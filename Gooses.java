@@ -912,6 +912,7 @@ public class Gooses implements BotAPI {
          
         try {
 			if(checkBingo()) {
+				System.out.println("Bingo");
 				return exchangeMe;
 			}
 		} catch (IOException e) {
@@ -989,7 +990,7 @@ public class Gooses implements BotAPI {
 		for (int j = 0; j < seven.size(); j++) {
 			String test = seven.get(j);
 			int same = 0;
-			for (int i = 0; i < 7; ++i) {
+			for (int i = 0; i < frame.length(); ++i) {
 				if (test.contains(frame.substring(i, i + 1))) {
 					same++;
 				} else if (!test.contains(frame.substring(i, i + 1))) {
