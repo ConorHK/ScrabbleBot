@@ -18,6 +18,7 @@ public class Gooses implements BotAPI {
     private int turnCount;
     private GADDAG gaddag;
     private ArrayList<Coordinates> newLetterCoords;
+    private boolean isPoolUpdated;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
@@ -896,6 +897,13 @@ public class Gooses implements BotAPI {
         String lastPlay = lastPlayArr[0];
         return lastPlay;
     }
+    
+    private int getPool() {
+        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
+        String lastPlay = lastPlayArr[1];
+      
+        return Integer.parseInt(lastPlay.split(" ")[2]);
+    }
 
     private Move moveFromLast() {
         String lastPlay = getLastMove();
@@ -948,7 +956,7 @@ public class Gooses implements BotAPI {
     	 
     	 ArrayList<Character> vowels = new ArrayList<Character>();
     	 ArrayList<Character> consonants = new ArrayList<Character>();
-    	 StringBuilder command = new StringBuilder("EXCHANGE ");
+    	 StringBuilder command = new StringBuilder();
     	 
     	 for(int i = 0;i<frameArray.size();i++) {
     		 if(frameArray.get(i) == 'A') {
@@ -985,6 +993,8 @@ public class Gooses implements BotAPI {
     		 }
     	 }
     	 
+    	 
+    	 isPoolUpdated = false;
     	 return command.toString();
     	 
     }
@@ -1078,14 +1088,19 @@ public class Gooses implements BotAPI {
     	  } 
     	return false;
     }
+    
+//    private boolean getPool() {
+//    	
+//    }
 
     public String getCommand() {
         // Add your code here to input your commands
         // Your code must give the command NAME <botname> at the start of the game
-
+    	
         String command = "";
         switch (turnCount) {
             case 0:
+            	isPoolUpdated = false;
                 command = "NAME gooses";
                 break;
             
@@ -1096,8 +1111,20 @@ public class Gooses implements BotAPI {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
                 } catch (NullPointerException ex) {
                 
+                    if(isPoolUpdated) {
+                    	
+                    	String  tilesToReplace = getExchangeCommand();
+                    	if(getPool() >= tilesToReplace.length() ) {
+                    		command = "EXCHANGE " + tilesToReplace;
+                    	} else {
+                    		command = "PASS";
+                    	}
+                    } else {
+                    	command = "POOL";
+                    	isPoolUpdated = true;
+                    }
                 	
-                    command = getExchangeCommand();
+                
                 }
                 break;
         }
