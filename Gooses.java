@@ -886,6 +886,9 @@ public class Gooses implements BotAPI {
                 }
             }
         }
+        if(bestMoveScore < 4) {
+            return null;
+        }
         return bestMove;
     }
 
@@ -929,11 +932,7 @@ public class Gooses implements BotAPI {
     private Boolean doubleDigits(String toMatch) {
         Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
         Matcher match = pat.matcher(toMatch);
-        if (match.find() && match.group().length() == 3) {
-            return true;
-        }
-
-        return false;
+        return match.find() && match.group().length() == 3;
     }
 
     private boolean challenge() {
@@ -960,16 +959,10 @@ public class Gooses implements BotAPI {
             word = check.substring(5);
         }
 
-        if (direction == 'A') {
-            isHorizontal = true;
-        } else
-            isHorizontal = false;
+        isHorizontal = direction == 'A';
         Word words = new Word(row, column, isHorizontal, word);
         ArrayList<Word> toCheck = getAllWords(words);
-        if (!dictionary.areWords(toCheck)) {
-            return true;
-        }
-        return false;
+        return !dictionary.areWords(toCheck);
     }
 
     public String getCommand() {
