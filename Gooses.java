@@ -855,9 +855,7 @@ public class Gooses implements BotAPI {
                 frameArray = parseFrame(frame);
                 for (Place tempPlace : tempPlaces) {
                     for (int j = 0; j < frameArray.size(); j++) {
-
                         if (tempPlace.toString().toCharArray()[0] == frameArray.get(j)) {
-
                             frameArray.remove(j);
                         }
                     }
@@ -886,7 +884,7 @@ public class Gooses implements BotAPI {
                 }
             }
         }
-        if(bestMoveScore < 4) {
+        if(bestMoveScore < 2) {
             return null;
         }
         return bestMove;
@@ -908,16 +906,16 @@ public class Gooses implements BotAPI {
     public String getExchangeCommand() {
         ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
         StringBuilder command = new StringBuilder();
-        System.out.println(me.getFrameAsString());
 
         // PREFIX /SUFFIX STUFF
-
-
-        int threshold = 27;
+        int threshold = 23;
         while(command.toString().isEmpty()) {
             for (int i = 0; i < frameArray.size(); i++) {
-                if (tilePriority.get(frameArray.get(i)) < threshold) {
+                if (tilePriority.get(frameArray.get(i)) > threshold) {
                     command.append(frameArray.remove(i));
+                    if(command.length() == getPool()) {
+                        break;
+                    }
                 }
             }
             threshold--;
