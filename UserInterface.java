@@ -227,7 +227,6 @@ public class UserInterface implements UserInterfaceAPI {
             printNewName();
         } else if (!gameOver && opponentMadePlay && (command.equals("CHALLENGE") || command.equals("C"))) {
             if (scrabble.getDictionary().areWords(scrabble.getLatestWords())) {
-                System.out.println(scrabble.getLatestWords());
                 printChallengeFail();
                 scrabble.turnOver();
             } else {

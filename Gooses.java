@@ -17,8 +17,8 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
-    private ArrayList<Coordinates> newLetterCoords;
     private boolean isPoolUpdated;
+    private HashMap<Character, Integer> tilePriority;
 
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
@@ -29,9 +29,42 @@ public class Gooses implements BotAPI {
         this.dictionary = dictionary;
         turnCount = 0;
         this.gaddag = new GADDAG();
+        this.tilePriority = initializeTilePriority();
     }
 
-    public static int boardBoundaries(int position, boolean top) {
+    private HashMap<Character, Integer> initializeTilePriority() {
+        HashMap<Character, Integer> output = new HashMap<>();
+        output.put('S', 1);
+        output.put('Z', 2);
+        output.put('R', 3);
+        output.put('N', 4);
+        output.put('C', 5);
+        output.put('L', 6);
+        output.put('T', 7);
+        output.put('E', 8);
+        output.put('D', 9);
+        output.put('M', 10);
+        output.put('H', 11);
+        output.put('X', 12);
+        output.put('K', 13);
+        output.put('A', 14);
+        output.put('P', 15);
+        output.put('Y', 16);
+        output.put('I', 17);
+        output.put('G', 18);
+        output.put('B', 19);
+        output.put('J', 20);
+        output.put('O', 21);
+        output.put('F', 22);
+        output.put('W', 23);
+        output.put('U', 24);
+        output.put('V', 25);
+        output.put('Q', 26);
+        output.put('_', 27);
+        return output;
+    }
+
+    static int boardBoundaries(int position, boolean top) {
         if (top) {
             return Math.max(position - 1, 0);
         } else {
@@ -798,7 +831,6 @@ public class Gooses implements BotAPI {
                 {-5, -3},
                 {-6}
         };
-        ArrayList<Word> bestWord = new ArrayList<>();
         for (Move move : moves) {
             ArrayList<Word> allWords = getAllWords(makeWordFromMove(move));
             if (dictionary.areWords(allWords)) {
@@ -851,7 +883,6 @@ public class Gooses implements BotAPI {
                 if (tempScore > bestMoveScore) {
                     bestMoveScore = tempScore;
                     bestMove = move;
-                    bestWord = allWords;
                 }
             }
         }
@@ -863,58 +894,31 @@ public class Gooses implements BotAPI {
         String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2).split("\n");
         return lastPlayArr[0];
     }
-    
+
     private int getPool() {
-        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
+        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2).split("\n");
         String lastPlay = lastPlayArr[1];
-      
+
         return Integer.parseInt(lastPlay.split(" ")[2]);
     }
 
-
-   
-    
     public String getExchangeCommand() {
-    	 ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
-    	 
-    	 ArrayList<Character> vowels = new ArrayList<Character>();
-    	 ArrayList<Character> consonants = new ArrayList<Character>();
-    	 StringBuilder command = new StringBuilder();
-    	 
-    	 for(int i = 0;i<frameArray.size();i++) {
-    		 if(frameArray.get(i) == 'A') {
-    			 vowels.add('A');
-    		 }
-    		 else if(frameArray.get(i) == 'E') {
-    			 vowels.add('E');
-    		 }
-    		 else if(frameArray.get(i) == 'I') {
-    			 vowels.add('I');
-    		 }
-    		 else if(frameArray.get(i) == 'O') {
-    			 vowels.add('O');
-    		 }
-    		 else if(frameArray.get(i) == 'U') {
-    			 vowels.add('U');
-    		 } else {
-    			 consonants.add(frameArray.get(i));
-    		 }
-    	 }
-    	 
-    	 if(vowels.size() > consonants.size()) {
-    		 int counter = vowels.size();
-    		 while(counter > consonants.size()) {
-    			 command.append(vowels.remove(0));
-    			 counter--;
-    		 }
-    		 
-    	 } else {
-    		 int counter = consonants.size();
-    		 while(counter > vowels.size()) {
-    			 command.append(consonants.remove(0));
-    			 counter--;
-    		 }
-    	 }
+        ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
+        StringBuilder command = new StringBuilder();
+        System.out.println(me.getFrameAsString());
+
+        // PREFIX /SUFFIX STUFF
+
+
+        int threshold = 27;
+        while(command.toString().isEmpty()) {
+            for (int i = 0; i < frameArray.size(); i++) {
+                if (tilePriority.get(frameArray.get(i)) < threshold) {
+                    command.append(frameArray.remove(i));
+                }
+            }
+            threshold--;
+        }
 
         isPoolUpdated = false;
         return command.toString();
@@ -946,7 +950,7 @@ public class Gooses implements BotAPI {
         boolean isHorizontal;
         if (doubleDigits) {
             rowString = check.substring(1, 3);
-            row = Integer.parseInt(rowString) -1;
+            row = Integer.parseInt(rowString) - 1;
             direction = check.charAt(4);
             word = check.substring(6);
         } else {
@@ -968,59 +972,31 @@ public class Gooses implements BotAPI {
         return false;
     }
 
-    private boolean isError() {
-        //TODO
-        return false;
-    }
-    
-//    private boolean getPool() {
-//    	
-//    }
-
     public String getCommand() {
-
-        // Add your code here to input your commands
-        // Your code must give the command NAME <botname> at the start of the game
-    	
-        
-
         String command;
         if (turnCount == 0) {
-        	isPoolUpdated = false;
-        
+            isPoolUpdated = false;
             command = "NAME gooses";
         } else {
             BoardExtended boardExtended = new BoardExtended(this.board);
             if (challenge()) {
                 command = "CHALLENGE";
             } else {
-
                 try {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
                 } catch (NullPointerException ex) {
+                    if (isPoolUpdated) {
 
-                
-                    if(isPoolUpdated) {
-                    	
-                    	String  tilesToReplace = getExchangeCommand();
-                    	if(getPool() >= tilesToReplace.length() ) {
-                    		command = "EXCHANGE " + tilesToReplace;
-                    	} else {
-                    		command = "PASS";
-                    	}
+                        String tilesToReplace = getExchangeCommand();
+                        if (getPool() >= tilesToReplace.length()) {
+                            command = "EXCHANGE " + tilesToReplace;
+                        } else {
+                            command = "PASS";
+                        }
                     } else {
-                    	command = "POOL";
-                    	isPoolUpdated = true;
+                        command = "POOL";
+                        isPoolUpdated = true;
                     }
-                	
-                
-
-//                    if (!isError()) {
-//                        command = getExchangeCommand();
-//                    } else {
-//                        command = "PASS";
-//                    }
-
                 }
             }
         }
