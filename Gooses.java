@@ -993,8 +993,9 @@ public class Gooses implements BotAPI {
 			for (int i = 0; i < frame.length(); ++i) {
 				if (test.contains(frame.substring(i, i + 1))) {
 					same++;
-				} else if (!test.contains(frame.substring(i, i + 1))) {
-					exchangeMe = frame.substring(i, i + 1);
+				} 
+				else {
+					exchangeMe = exchangeMe + frame.substring(i, i + 1);
 				}
 				if (same == 6) {
 					return true;
