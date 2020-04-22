@@ -913,10 +913,11 @@ public class Gooses implements BotAPI {
         try {
 			if(checkBingo()) {
 				System.out.println("Bingo");
+				System.out.println(exchangeMe);
 				return exchangeMe;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.print("triggered");
 		}
         // PREFIX /SUFFIX STUFF
         int threshold = 23;
@@ -986,16 +987,18 @@ public class Gooses implements BotAPI {
 				}
 			}
 		}
-		exchangeMe = "";
+		
 		for (int j = 0; j < seven.size(); j++) {
+			exchangeMe = "";
 			String test = seven.get(j);
 			int same = 0;
 			for (int i = 0; i < frame.length(); ++i) {
+				
 				if (test.contains(frame.substring(i, i + 1))) {
 					same++;
 				} 
 				else {
-					exchangeMe = exchangeMe + frame.substring(i, i + 1);
+					exchangeMe = frame.substring(i, i + 1);
 				}
 				if (same == 6) {
 					return true;
