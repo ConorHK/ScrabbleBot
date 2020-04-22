@@ -1,9 +1,9 @@
 import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public class Gooses implements BotAPI {
+import sun.swing.UIAction;
+
+public class GoosesOld implements BotAPI {
 
     // The public API of Bot must not change
     // This is ONLY class that you can edit in the program
@@ -17,14 +17,11 @@ public class Gooses implements BotAPI {
     private DictionaryAPI dictionary;
     private int turnCount;
     private GADDAG gaddag;
-    private ArrayList<Coordinates> newLetterCoords;
-    private boolean isPoolUpdated;
 
-
-    Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
+    GoosesOld(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
+    	this.ui = ui;
         this.me = me;
-        this.ui = ui;
         this.board = board;
         this.dictionary = dictionary;
         turnCount = 0;
@@ -337,7 +334,7 @@ public class Gooses implements BotAPI {
             } else {
                 command.append(" D ");
             }
-            for (Place p : places) {
+            for(Place p : places) {
                 command.append(p.letter);
             }
             return command.toString();
@@ -622,122 +619,6 @@ public class Gooses implements BotAPI {
     }
     /* END OF NESTED GADDAG CLASS */
 
-    /* Connecting word Validation: */
-    public ArrayList<Word> getAllWords(Word mainWord) {
-        ArrayList<Word> words = new ArrayList<>();
-        words.add(mainWord);
-        int r = mainWord.getFirstRow();
-        int c = mainWord.getFirstColumn();
-        for (int i = 0; i < mainWord.length(); i++) {
-            if (isAdditionalWord(r, c, mainWord.isHorizontal())) {
-                Square[][] possibleBoard = duplicateBoard(mainWord);
-                words.add(getAdditionalWord(r, c, mainWord.isHorizontal(), possibleBoard));
-            }
-            if (mainWord.isHorizontal()) {
-                c++;
-            } else {
-                r++;
-            }
-        }
-        return words;
-    }
-
-    private boolean isAdditionalWord(int r, int c, boolean isHorizontal) {
-        if ((isHorizontal && ((r > 0 && board.getSquareCopy(r - 1, c).isOccupied()) || (r < Board.BOARD_SIZE - 1 && board.getSquareCopy(r + 1, c).isOccupied()))) || (!isHorizontal && ((c > 0 && board.getSquareCopy(r, c - 1).isOccupied()) || (c < Board.BOARD_SIZE - 1 && board.getSquareCopy(r, c + 1).isOccupied())))) {
-            return true;
-        }
-        return false;
-    }
-
-    private Word getAdditionalWord(int mainWordRow, int mainWordCol, boolean mainWordIsHorizontal, Square[][] possibleBoard) {
-        int firstRow = mainWordRow;
-        int firstCol = mainWordCol;
-        // search up or left for the first letter
-        while (firstRow >= 0 && firstCol >= 0 && possibleBoard[firstRow][firstCol].isOccupied()) {
-            if (mainWordIsHorizontal) {
-                firstRow--;
-            } else {
-                firstCol--;
-            }
-        }
-        // went too far
-        if (mainWordIsHorizontal) {
-            firstRow++;
-        } else {
-            firstCol++;
-        }
-        // collect the letters by moving down or right
-        StringBuilder letters = new StringBuilder();
-        int r = firstRow;
-        int c = firstCol;
-        while (r < Board.BOARD_SIZE && c < Board.BOARD_SIZE && possibleBoard[r][c].isOccupied()) {
-            letters.append(possibleBoard[r][c].getTile().getLetter());
-            if (mainWordIsHorizontal) {
-                r++;
-            } else {
-                c++;
-            }
-        }
-        return new Word(firstRow, firstCol, !mainWordIsHorizontal, letters.toString());
-    }
-
-
-    private Square[][] duplicateBoard(Word word) {
-        Square[][] output = new Square[15][15];
-        for (int i = 0; i < Board.BOARD_SIZE; i++) {
-            for (int j = 0; j < Board.BOARD_SIZE; j++) {
-                output[i][j] = board.getSquareCopy(i, j);
-            }
-        }
-        int r = word.getFirstRow();
-        int c = word.getFirstColumn();
-        for (int i = 0; i < word.length(); i++) {
-            if (!output[r][c].isOccupied()) {
-                char letter = word.getLetter(i);
-                Tile tile = new Tile(letter);
-                output[r][c].add(tile);
-            }
-            if (word.isHorizontal()) {
-                c++;
-            } else {
-                r++;
-            }
-        }
-        return output;
-    }
-
-    /* --------------------------  */
-    /* POINTS */
-    private int getWordPoints(Word word) {
-        int wordValue = 0;
-        int wordMultipler = 1;
-        int r = word.getFirstRow();
-        int c = word.getFirstColumn();
-        for (int i = 0; i < word.length(); i++) {
-            int letterValue = (new Tile(word.getLetter(i)).getValue());
-            wordValue = wordValue + letterValue * board.getSquareCopy(r, c).getLetterMuliplier();
-            wordMultipler = wordMultipler * board.getSquareCopy(r, c).getWordMultiplier();
-        }
-        if (word.isHorizontal()) {
-            c++;
-        } else {
-            r++;
-        }
-        return wordValue * wordMultipler;
-    }
-
-    public int getAllPoints(ArrayList<Word> words) {
-        int points = 0;
-        for (Word word : words) {
-            points = points + getWordPoints(word);
-        }
-        if (words.get(0).length() == Frame.MAX_TILES) {
-            points = points + 50;
-        }
-        return points;
-    }
-
-    /* ------ */
     private ArrayList<Character> parseFrame(String frame) {
         frame = frame.substring(1, frame.length() - 1);
         frame = frame.replaceAll(", ", "");
@@ -748,14 +629,154 @@ public class Gooses implements BotAPI {
         return output;
     }
 
-    private Word makeWordFromMove(Move move) {
-        StringBuilder letters = new StringBuilder();
-        for (Place p : move) {
-            letters.append(p.letter);
+    public Move testGADDAG(String frame, BoardExtended boardExtended) {
+        ArrayList<Character> frameArray = parseFrame(frame);
+        boardExtended.getCrossSets(boardExtended, gaddag.getRoot(), this.board);
+        boardExtended.getAnchors();
+        long searchTime = System.currentTimeMillis();
+        List<Move> moves = this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board);
+        String highestWord = null;
+        int highestScoringPoints = 0;
+        Move highestScoringMove = new Move();
+        for (Move move : moves) {
+            StringBuilder word = new StringBuilder();
+            for (Place place : move) {
+                word.append(place.letter);
+            }
+            ArrayList<Word> check = new ArrayList<>();
+            Word maxWord = new Word(0, 0, true, word.toString());
+            check.add(maxWord);
+            int score = calculateScore(move, boardExtended, this.board);
+            if (score > highestScoringPoints && dictionary.areWords(check)) {
+                highestScoringPoints = score;
+                highestScoringMove = move;
+                highestWord = word.toString();
+            }
         }
-        return new Word(move.places.get(0).getRow(), move.places.get(0).getColumn(), (move.places.get(0).getRow() == move.places.get(1).getRow()), letters.toString());
+        searchTime = System.currentTimeMillis() - searchTime;
+        System.out.println("\n" + moves.size() + " moves found (including duplicates).");
+        System.out.println("Highest scoring move: ");
+        System.out.println("Start row: " + highestScoringMove.places.get(0).getRow() + " Start column: " + highestScoringMove.places.get(0).getColumn());
+        System.out.println("Next row: " + highestScoringMove.places.get(1).getRow() + " Next column: " + highestScoringMove.places.get(1).getColumn());
+        System.out.print(highestWord + "\t" + highestScoringPoints + " points\n");
+        System.out.println("Time taken: " + searchTime + "ms.");
+        System.out.println("Command: " + highestScoringMove.toString());
+        return highestScoringMove;
     }
 
+    private int calculateScore(Move move, BoardExtended boardExtended, BoardAPI board) {
+        int total = 0;
+        int wordMultiplier = 1;
+        int wordScore = 0;
+
+        for (Place place : move) {
+            Tile placement = new Tile(place.letter);
+            if (boardExtended.isAnchor(place.getRow(), place.getColumn())) {
+                int connectingWordsScore = 0;
+                boolean connectingWords = false;
+                int left = Math.max(place.getRow() - 1, 0);
+                int right = Math.min(place.getRow() + 1, Board.BOARD_SIZE - 1);
+                int up = Math.max(place.getColumn() - 1, 0);
+                int down = Math.min(place.getColumn() + 1, Board.BOARD_SIZE - 1);
+
+                while (board.getSquareCopy(boardBoundaries(left, true), boardBoundaries(place.getColumn(), false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(left, true), boardBoundaries(place.getColumn(), false)).getTile().getValue();
+                    left--;
+                    connectingWords = true;
+                    if (boardBoundaries(left, false) == 14) {
+                        break;
+                    }
+                }
+                while (board.getSquareCopy(boardBoundaries(right, false), boardBoundaries(place.getColumn(), false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(right, false), boardBoundaries(place.getColumn(), false)).getTile().getValue();
+                    right++;
+                    connectingWords = true;
+                    if (boardBoundaries(right, false) == 14) {
+                        break;
+                    }
+                }
+                while (board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up, true)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(up, true)).getTile().getValue();
+                    up++;
+                    connectingWords = true;
+                    if (boardBoundaries(up, false) == 14) {
+                        break;
+                    }
+                }
+                while (board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(down, false)).isOccupied()) {
+                    connectingWordsScore += board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(down, false)).getTile().getValue();
+                    down++;
+                    connectingWords = true;
+                    if (boardBoundaries(down, false) == 14) {
+                        break;
+                    }
+                }
+                connectingWordsScore += placement.getValue() * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getLetterMuliplier();
+
+                if (connectingWords) {
+                    connectingWordsScore = connectingWordsScore * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getWordMultiplier();
+                    total += connectingWordsScore;
+                }
+
+                wordMultiplier *= board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getWordMultiplier();
+            } else {
+                wordMultiplier = wordMultiplier * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getWordMultiplier();
+            }
+            wordScore += placement.getValue() * board.getSquareCopy(boardBoundaries(place.getRow(), false), boardBoundaries(place.getColumn(), false)).getLetterMuliplier();
+        }
+        if (move.usesAllTiles) {
+            total += 50;
+        }
+        return total + wordScore * wordMultiplier;
+    }
+
+    private void generateMoves(List<Move> moves) {
+        ArrayList<Word> wordsToCheck = new ArrayList<Word>();
+
+        for (int i = 0; i < moves.size(); i++) {
+            Move convert = moves.get(i);
+            int row = convert.places.get(0).getRow();
+            int column = convert.places.get(0).getColumn();
+            char rowLetter = (char) (row);
+            boolean isHorizontal;
+            if (convert.places.get(0).row == convert.places.get(1).row) {
+                isHorizontal = true;
+            } else
+                isHorizontal = false;
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(moves.get(i));
+            String letters = sb.toString();
+            letters = letters.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\, ", "");
+
+            Word insert = new Word(rowLetter, column, isHorizontal, letters);
+            wordsToCheck.add(insert);
+        }
+
+        ArrayList<Word> wordsToCompare = new ArrayList<Word>();
+        for (int k = 0; k < wordsToCheck.size(); k++) {
+            if (!wordsToCompare.toString().contains(wordsToCheck.get(k).toString()))
+                wordsToCompare.add(wordsToCheck.get(k));
+        }
+
+        System.out.println("duplicates?" + wordsToCheck.size());
+        System.out.println("no duplicates?" + wordsToCompare.size());
+
+        for (int j = 0; j < wordsToCompare.size(); j++) {
+
+            ArrayList<Word> subWordsToCheck = new ArrayList<Word>();
+            subWordsToCheck.add(wordsToCompare.get(j));
+            if (dictionary.areWords(subWordsToCheck) == false) {
+                wordsToCompare.removeAll(subWordsToCheck);
+
+            }
+            subWordsToCheck.clear();
+        }
+
+        System.out.println("Filtered words: " + wordsToCompare.toString());
+        System.out.println("Filtered words: " + wordsToCompare.size());
+
+    }
 
     private List<Move> validMoves(List<Move> possibleMoves) {
         List<Move> output = new ArrayList<>();
@@ -766,20 +787,187 @@ public class Gooses implements BotAPI {
         String frameStringClean = me.getFrameAsString();
         frameStringClean = frameStringClean.substring(1, frameStringClean.length() - 1);
         frameStringClean = frameStringClean.replaceAll(", ", "");
-        for (char c : frameStringClean.toCharArray()) {
+        for(char c : frameStringClean.toCharArray()) {
             tiles.add(new Tile(c));
         }
         frame.addTiles(tiles);
 
         // constructing word from move
-        for (Move m : possibleMoves) {
-            ArrayList<Word> checkWord = new ArrayList<>();
-            checkWord.add(makeWordFromMove(m));
-            if (board.isLegalPlay(frame, makeWordFromMove(m)) && dictionary.areWords(checkWord)) {
-                output.add(m);
+        for(Move m : possibleMoves) {
+            StringBuilder wordString = new StringBuilder();
+            for(Place p: m) {
+                wordString.append(p.letter);
+            }
+            Word word = new Word(m.places.get(0).getRow(), m.places.get(0).getColumn(), (m.places.get(0).getRow() == m.places.get(1).getRow()), wordString.toString());
+            ArrayList<Word> wordArrayList = new ArrayList<>();
+            if(dictionary.areWords(wordArrayList) && board.isLegalPlay(frame, word) ) {
+                if(validateWordPlacement(m))
+            	output.add(m);
             }
         }
         return output;
+    }
+    ArrayList<Word> connectedWords = new ArrayList<Word>();
+    public boolean validateWordPlacement(Move move) {
+    	
+    	connectedWords = new ArrayList<Word>(); 
+    	
+        for(Place place:move) {
+            if(place.getColumn() < 0 || place.getColumn() >= 15) {
+                return false;
+            }
+            if(place.getRow() < 0 || place.getRow() >= 15) {
+                return false;
+            }
+        }
+        /*Frame frame = new Frame();
+        // constructing frame from string
+        ArrayList<Tile> tiles = new ArrayList<>();
+        String frameStringClean = me.getFrameAsString();
+        frameStringClean = frameStringClean.substring(1, frameStringClean.length() - 1);
+        frameStringClean = frameStringClean.replaceAll(", ", "");
+        for(char c : frameStringClean.toCharArray()) {
+            tiles.add(new Tile(c));
+        }
+        frame.addTiles(tiles);
+        //Constructing Word
+        StringBuilder wordString = new StringBuilder();
+        for(Place p: move) {
+            wordString.append(p.letter);
+        }
+        Word legalWord = new Word(move.places.get(0).getRow(), move.places.get(0).getColumn(), (move.places.get(0).getRow() == move.places.get(1).getRow()), wordString.toString());
+        if(!board.isLegalPlay(frame, legalWord)) {
+            return false;
+        }*/
+        if (move.places.get(0).getRow() == move.places.get(1).getRow()) {
+            StringBuilder across = new StringBuilder();
+            for (Place place : move) {
+                across.append(place.letter);
+            }
+            if (move.places.get(0).getColumn() - 1 >= 0) {
+                for (int i = 0; move.places.get(0).getColumn() - i > 0; i++) {
+                    if (board.getSquareCopy(move.places.get(0).getRow(), move.places.get(0).getColumn() - i).isOccupied()) {
+                        across.insert(0,board.getSquareCopy(move.places.get(0).getRow(), move.places.get(0).getColumn() - i).getTile().getLetter());
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            
+            if (move.places.get(move.places.size() - 1).getColumn() + 1 < 15) {
+                for (int i = 0; move.places.get(move.places.size() - 1).getColumn() + i < 15; i++) {
+                    if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow(), move.places.get(move.places.size()-1).getColumn() + i).isOccupied()) {
+                        across.append(
+                                board.getSquareCopy(move.places.get(move.places.size()-1).getRow(), move.places.get(move.places.size()-1).getColumn() + i).getTile().getLetter());
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if(across.length() > 0)
+                connectedWords.add(new Word(0, 0, true, across.toString()));
+            
+            for (int j = 0;j<move.places.size();j++) {
+            	
+            	Place place = move.places.get(j); 
+                //Horizontal Word
+                StringBuilder word = new StringBuilder(place.toString());
+                if( place.getRow() + 1 < 15) {
+                    if(board.getSquareCopy(place.getRow() + 1, place.getColumn()).isOccupied()) {
+                        for(int i = 1;place.getRow() + i < 15 ;i++) {
+                            if(board.getSquareCopy(place.getRow() + i, place.getColumn()).isOccupied()) {
+                                word.append(board.getSquareCopy(place.getRow() + i, place.getColumn()).getTile().getLetter());
+                            } else {
+                                break;
+                            }
+
+                        }
+
+
+                    }
+
+                }
+                if( place.getRow() - 1 >= 0) {
+                    if(board.getSquareCopy(place.getRow() - 1, place.getColumn()).isOccupied()) {
+                        for(int i = 1;place.getRow() - i >= 0 ;i++) {
+                            if(board.getSquareCopy(place.getRow() - i, place.getColumn()).isOccupied()) {
+                                word.insert(0,board.getSquareCopy(place.getRow() - i, place.getColumn()).getTile().getLetter());
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if(word.toString().length() > 1)
+                    connectedWords.add(new Word(0, 0, true, word.toString()));
+            }
+        } else  {
+            StringBuilder down = new StringBuilder();
+           
+            
+            for (Place place : move) {
+                down.append(place.letter);
+            
+            }
+            if (move.places.get(0).getRow() - 1 >= 0) {
+                for (int i = 0; move.places.get(0).getRow() - i > 0; i++) {
+                    if (board.getSquareCopy(move.places.get(0).getRow() - i, move.places.get(0).getColumn()).isOccupied()) {
+                        down.insert(0,board.getSquareCopy(move.places.get(0).getRow()-i, move.places.get(0).getColumn()).getTile().getLetter());
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (move.places.get(move.places.size() - 1).getRow() + 1 < 15) {
+                for (int i = 0; move.places.get(move.places.size() - 1).getRow() + i < 15; i++) {
+                    if (board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + i, move.places.get(move.places.size()-1).getColumn()).isOccupied()) {
+                        down.append(
+                                board.getSquareCopy(move.places.get(move.places.size()-1).getRow() + i, move.places.get(move.places.size()-1).getColumn()).getTile().getLetter());
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if(down.length() > 0)
+                connectedWords.add(new Word(0, 0, true, down.toString()));
+            
+            
+            for (int j = 0;j<move.places.size();j++) {
+            	
+            	Place place = move.places.get(j); 
+                //Horizontal Word
+                StringBuilder word = new StringBuilder(place.toString());
+                if( place.getColumn() + 1 < 15) {
+                    if(board.getSquareCopy(place.getRow(), place.getColumn() + 1).isOccupied()) {
+                        for(int i = 1;place.getColumn() + i < 15 ;i++) {
+                            if(board.getSquareCopy(place.getRow(), place.getColumn() + i).isOccupied()) {
+                                word.append(board.getSquareCopy(place.getRow(), place.getColumn() + i).getTile().getLetter());
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if( place.getColumn() - 1 >= 0) {
+                    if(board.getSquareCopy(place.getRow(), place.getColumn() - 1).isOccupied()) {
+                        for(int i = 1;place.getColumn() - i >= 0 ;i++) {
+                            if(board.getSquareCopy(place.getRow(), place.getColumn() - i).isOccupied()) {
+                                word.insert(0,board.getSquareCopy(place.getRow(), place.getColumn() - i).getTile().getLetter());
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if(word.toString().length() > 1)
+                    connectedWords.add(new Word(0, 0, true, word.toString()));
+            }
+        }
+        
+       
+        
+        return dictionary.areWords(connectedWords);
     }
 
     public Move getBestMove(String frame, BoardExtended boardExtended) {
@@ -789,6 +977,7 @@ public class Gooses implements BotAPI {
         List<Move> moves = validMoves(this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board));
         Move bestMove = null;
         int bestMoveScore = 0;
+        List<Place> bestMovePlaces;
         int[][] VCMix = {
                 {0, 0, -1, -2, -3, -4, -5},
                 {-1, 1, 1, 0, -1, -2},
@@ -798,234 +987,120 @@ public class Gooses implements BotAPI {
                 {-5, -3},
                 {-6}
         };
-        ArrayList<Word> bestWord = new ArrayList<>();
         for (Move move : moves) {
-            ArrayList<Word> allWords = getAllWords(makeWordFromMove(move));
-            if (dictionary.areWords(allWords)) {
-                int tempScore = getAllPoints(allWords);
-                List<Place> tempPlaces = move.places;
-                if (frame.contains("Q") || frame.contains("U")) {
-                    boolean isQ = false;
-                    boolean isU = false;
-                    for (Place tempPlace : tempPlaces) {
+            int tempScore = calculateScore(move, boardExtended, board);
+            List<Place> tempPlaces = move.places;
+            if (frame.contains("Q") || frame.contains("U") || frame.contains("X") || frame.contains("Z")) {
+                boolean isQ = false;
+                boolean isU = false;
+                boolean isX = false;
+                boolean isZ = false;
+                 for (int i = 0; i < tempPlaces.size(); i++) {
 
-                        if (tempPlace.toString().equals("Q")) {
-                            isQ = true;
-                        }
-
-                        if (tempPlace.toString().equals("U")) {
-                            isU = true;
-                        }
+                    if (tempPlaces.get(i).toString() == "Q") {
+                        isQ = true;
                     }
-                    if (isQ && isU)
-                        tempScore += 10;
-                }
-                frameArray = parseFrame(frame);
-                for (Place tempPlace : tempPlaces) {
-                    for (int j = 0; j < frameArray.size(); j++) {
 
-                        if (tempPlace.toString().toCharArray()[0] == frameArray.get(j)) {
-
-                            frameArray.remove(j);
-                        }
+                    if (tempPlaces.get(i).toString() == "U") {
+                        isU = true;
                     }
                 }
-                int vowels = 0;
-                if (frameArray.contains('A')) {
-                    vowels++;
-                }
-                if (frameArray.contains('I')) {
-                    vowels++;
-                }
-                if (frameArray.contains('O')) {
-                    vowels++;
-                }
-                if (frameArray.contains('U')) {
-                    vowels++;
-                }
-                if (frameArray.contains('E')) {
-                    vowels++;
-                }
+                if (isQ || isU || isZ || isX)
+                    tempScore += 10;
+            }
+            
+            
+            if(frame.contains("S")) {
+            	tempScore -= 10;
+            }
+            
+            
+            frameArray = parseFrame(frame);
+            for (int i = 0; i < tempPlaces.size(); i++) {
+                for (int j = 0; j < frameArray.size(); j++) {
 
-                tempScore += VCMix[vowels][frameArray.size() - vowels];
-                if (tempScore > bestMoveScore) {
-                    bestMoveScore = tempScore;
-                    bestMove = move;
-                    bestWord = allWords;
+                    if (tempPlaces.get(i).toString().toCharArray()[0] == frameArray.get(j)) {
+
+                        frameArray.remove(j);
+                    }
                 }
             }
+            int vowels = 0;
+            if (frameArray.contains('A')) {
+                vowels++;
+            }
+            if (frameArray.contains('I')) {
+                vowels++;
+            }
+            if (frameArray.contains('O')) {
+                vowels++;
+            }
+            if (frameArray.contains('U')) {
+                vowels++;
+            }
+            if (frameArray.contains('E')) {
+                vowels++;
+            }
+
+            tempScore += VCMix[vowels][frameArray.size() - vowels];
+
+            StringBuilder word = new StringBuilder();
+            for (Place place : move) {
+                word.append(place.letter);
+            }
+
+            ArrayList<Word> check = new ArrayList<>();
+            Word maxWord = new Word(0, 0, true, word.toString());
+            check.add(maxWord);
+
+            if (tempScore > bestMoveScore && dictionary.areWords(check) &&validateWordPlacement(move)) {
+                bestMoveScore = tempScore;
+                bestMove = move;
+//                System.out.println("-----------------------------------------------------------");
+//                System.out.println(bestMoveScore);
+//                System.out.println(frameArray.toString());
+//                System.out.println(word.toString());
+//                System.out.println(bestMove.toString());
+
+            }
+
+
         }
+
+        validateWordPlacement(bestMove);
+        System.out.println(connectedWords.toString());
         return bestMove;
+
     }
-
-
+    
     private String getLastMove() {
-        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2).split("\n");
-        return lastPlayArr[0];
+    	String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
+    	String lastPlay = lastPlayArr[0];
+    	return lastPlay;
     }
-    
-    private int getPool() {
-        String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2, ui.getAllInfo().length()).split("\n");
-        String lastPlay = lastPlayArr[1];
-      
-        return Integer.parseInt(lastPlay.split(" ")[2]);
-    }
-
-
-   
-    
-    public String getExchangeCommand() {
-    	 ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
-    	 
-    	 ArrayList<Character> vowels = new ArrayList<Character>();
-    	 ArrayList<Character> consonants = new ArrayList<Character>();
-    	 StringBuilder command = new StringBuilder();
-    	 
-    	 for(int i = 0;i<frameArray.size();i++) {
-    		 if(frameArray.get(i) == 'A') {
-    			 vowels.add('A');
-    		 }
-    		 else if(frameArray.get(i) == 'E') {
-    			 vowels.add('E');
-    		 }
-    		 else if(frameArray.get(i) == 'I') {
-    			 vowels.add('I');
-    		 }
-    		 else if(frameArray.get(i) == 'O') {
-    			 vowels.add('O');
-    		 }
-    		 else if(frameArray.get(i) == 'U') {
-    			 vowels.add('U');
-    		 } else {
-    			 consonants.add(frameArray.get(i));
-    		 }
-    	 }
-    	 
-    	 if(vowels.size() > consonants.size()) {
-    		 int counter = vowels.size();
-    		 while(counter > consonants.size()) {
-    			 command.append(vowels.remove(0));
-    			 counter--;
-    		 }
-    		 
-    	 } else {
-    		 int counter = consonants.size();
-    		 while(counter > vowels.size()) {
-    			 command.append(consonants.remove(0));
-    			 counter--;
-    		 }
-    	 }
-
-        isPoolUpdated = false;
-        return command.toString();
-
-    }
-
-
-    private Boolean doubleDigits(String toMatch) {
-        Pattern pat = Pattern.compile("^[A-O]\\d{1,2}");
-        Matcher match = pat.matcher(toMatch);
-        if (match.find() && match.group().length() == 3) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean challenge() {
-        String check = getLastMove();
-        if (!check.matches("[A-O](\\d){1,2}( )+[A,D]( )+([A-Z]){1,15}")) {
-            return false;
-        }
-        boolean doubleDigits = doubleDigits(check);
-        String word;
-        int column = check.charAt(0) - 'A';
-        int row;
-        String rowString;
-        char direction;
-        boolean isHorizontal;
-        if (doubleDigits) {
-            rowString = check.substring(1, 3);
-            row = Integer.parseInt(rowString) -1;
-            direction = check.charAt(4);
-            word = check.substring(6);
-        } else {
-            rowString = check.substring(1, 2);
-            row = Integer.parseInt(rowString) - 1;
-            direction = check.charAt(3);
-            word = check.substring(5);
-        }
-
-        if (direction == 'A') {
-            isHorizontal = true;
-        } else
-            isHorizontal = false;
-        Word words = new Word(row, column, isHorizontal, word);
-        ArrayList<Word> toCheck = getAllWords(words);
-        if (!dictionary.areWords(toCheck)) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isError() {
-        //TODO
-        return false;
-    }
-    
-//    private boolean getPool() {
-//    	
-//    }
 
     public String getCommand() {
-
         // Add your code here to input your commands
         // Your code must give the command NAME <botname> at the start of the game
-    	
-        
 
-        String command;
-        if (turnCount == 0) {
-        	isPoolUpdated = false;
-        
-            command = "NAME gooses";
-        } else {
-            BoardExtended boardExtended = new BoardExtended(this.board);
-            if (challenge()) {
+        String command = "";
+        switch (turnCount) {
+            case 0:
+                command = "NAME gooses";
+                break;
+            case 5:
                 command = "CHALLENGE";
-            } else {
-
+                break;
+            default:
+                BoardExtended boardExtended = new BoardExtended(this.board);
                 try {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
                 } catch (NullPointerException ex) {
-
-                
-                    if(isPoolUpdated) {
-                    	
-                    	String  tilesToReplace = getExchangeCommand();
-                    	if(getPool() >= tilesToReplace.length() ) {
-                    		command = "EXCHANGE " + tilesToReplace;
-                    	} else {
-                    		command = "PASS";
-                    	}
-                    } else {
-                    	command = "POOL";
-                    	isPoolUpdated = true;
-                    }
-                	
-                
-
-//                    if (!isError()) {
-//                        command = getExchangeCommand();
-//                    } else {
-//                        command = "PASS";
-//                    }
-
+                    command = "PASS";
                 }
-            }
+                break;
         }
         turnCount++;
         return command;
     }
 }
-
