@@ -20,7 +20,7 @@ public class Gooses implements BotAPI {
     private boolean isPoolUpdated;
     private HashMap<Character, Integer> tilePriority;
 	private final static ArrayList<String> seven = new ArrayList<String>();
-    String exchangeMe;
+    public static String exchangeMe;
 
 
 
@@ -976,7 +976,9 @@ public class Gooses implements BotAPI {
     }
     
 	private Boolean checkBingo() throws FileNotFoundException, IOException {
-		String frame = me.getFrameAsString();
+		String frameToParse = me.getFrameAsString();
+		ArrayList<Character> frame = parseFrame(frameToParse);
+
 		File file = new File("csw.txt");
 
 		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
@@ -989,16 +991,15 @@ public class Gooses implements BotAPI {
 		}
 		
 		for (int j = 0; j < seven.size(); j++) {
-			exchangeMe = "";
 			String test = seven.get(j);
 			int same = 0;
-			for (int i = 0; i < frame.length(); ++i) {
-				
-				if (test.contains(frame.substring(i, i + 1))) {
+			exchangeMe = "";
+			for (int i = 0; i < frame.size(); i++) {
+				if (test.contains(frame.get(i).toString())) {
 					same++;
 				} 
 				else {
-					exchangeMe = frame.substring(i, i + 1);
+					exchangeMe = frame.get(i).toString();
 				}
 				if (same == 6) {
 					return true;
