@@ -19,6 +19,9 @@ public class Gooses implements BotAPI {
     private GADDAG gaddag;
     private boolean isPoolUpdated;
     private HashMap<Character, Integer> tilePriority;
+	private final static ArrayList<String> seven = new ArrayList<String>();
+    String exchangeMe;
+
 
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
@@ -906,7 +909,14 @@ public class Gooses implements BotAPI {
     public String getExchangeCommand() {
         ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
         StringBuilder command = new StringBuilder();
-
+         
+        try {
+			if(checkBingo()) {
+				return exchangeMe;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
         // PREFIX /SUFFIX STUFF
         int threshold = 23;
         while(command.toString().isEmpty()) {
@@ -962,6 +972,38 @@ public class Gooses implements BotAPI {
         ArrayList<Word> toCheck = getAllWords(words);
         return !dictionary.areWords(toCheck);
     }
+    
+	private Boolean checkBingo() throws FileNotFoundException, IOException {
+		String frame = me.getFrameAsString();
+		File file = new File("csw.txt");
+
+		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				if (line.length() == 7) {
+					seven.add(line);
+				}
+			}
+		}
+		exchangeMe = "";
+		for (int j = 0; j < seven.size(); j++) {
+			String test = seven.get(j);
+			int same = 0;
+			for (int i = 0; i < 7; ++i) {
+				if (test.contains(frame.substring(i, i + 1))) {
+					same++;
+				} else if (!test.contains(frame.substring(i, i + 1))) {
+					exchangeMe = frame.substring(i, i + 1);
+				}
+				if (same == 6) {
+					return true;
+				}
+
+			}
+
+		}
+		return false;
+	}
 
     public String getCommand() {
         String command;
