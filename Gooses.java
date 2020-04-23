@@ -21,7 +21,6 @@ public class Gooses implements BotAPI {
     private HashMap<Character, Integer> tilePriority;
 	private final static ArrayList<String> seven = new ArrayList<String>();
     private static String exchangeMe;
-    private static int conseqBingos;
     
     
 
@@ -1061,7 +1060,6 @@ public class Gooses implements BotAPI {
     }
     
 	private Boolean checkBingo() throws FileNotFoundException, IOException {
-		conseqBingos++;
 		String frameToParse = me.getFrameAsString();
 		ArrayList<Character> frame = parseFrame(frameToParse);
 
@@ -1116,7 +1114,6 @@ public class Gooses implements BotAPI {
                         try {
 							if(checkBingo()) {
 								tilesToReplace = exchangeMe;
-								System.out.println("Bingo");
 							}
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
