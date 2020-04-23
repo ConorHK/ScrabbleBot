@@ -422,6 +422,8 @@ public class UserInterface implements UserInterfaceAPI {
         }
         if (!draw) {
             printLine(winners.get(0) + " wins!");
+            System.out.println(winners.get(0).getName());
+            System.out.println(winners.get(0).getScore());
         } else {
             printLine("The following players draw!");
             for (Player winner : winners) {

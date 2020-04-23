@@ -496,7 +496,7 @@ public class Gooses implements BotAPI {
         }
 
         public static Node build(Scanner words) {
-            System.out.println("Building GADDAG...");
+//            System.out.println("Building GADDAG...");
             Node root = new Node();
             while (words.hasNext()) {
                 Node node = root;
@@ -515,7 +515,7 @@ public class Gooses implements BotAPI {
                     node.addNode(word.charAt(m + 1), temp);
                 }
             }
-            System.out.println("GADDAG done!");
+//            System.out.println("GADDAG done!");
             return root;
         }
 
@@ -817,6 +817,81 @@ public class Gooses implements BotAPI {
         }
         return output;
     }
+    
+    String[] mostCommonPrefixesAndSuffixes = {"ANTE","ANTI","AUTO","BE","BIO","BY","CO","COM","CON","DE","DIS","DOWN","DYS","EM","EN","EPI","EX","FOR","FORE","IM","INTER","IN","INTER","ISO","MEGA","MID","MIS",
+			"MONO","NEO","NON","OB","OFF","ON","OUT","OVER","PAR","PER","POST","PRE","PRO","RE","SEMI","SIDE","SUB","SUPER","TELE","TOP","TRI","UN","UNDER","UP","ABLE","ACLE","AGE" ,"AL", "ALLY", "ANA", "ANCE", "AND", "ANE", "ANT", "ARY", "ASE", "AUX"
+			,"BACK" ,"BALL" ,"BELL" ,"BOOK" ,"BOY","DAY","DOM","EAU" , "ED" ,"EE" ,"ENCE" ,"ENT" ,"ER" ,"ERY" ,"ET" ,"ELLA" ,"ETTE" ,"ESS" ,"FORM" ,"FUL" ,"FULLY" ,"GENY" ,"HEAD" ,"HOOD" ,"IBLE" ,"IC" ,"ICES" ,"ICLE" ,"IDE" ,"IER" ,"IES" ,"IEST" ,"IFY" 
+			,"ILE" ,"ILIA" ,"ILY" ,"INE" ,"ING" ,"ION" ,"IOUS" ,"ISE" ,"ISH","ISM" ,"IST" ,"ITE" ,"ITIC" ,"ITY" ,"IVE" ,"IX" ,"IZE" ,"KIN" ,"LAND" ,"LESS" ,"LET" ,"LIKE" ,"LINE" ,"LING" ,"LONG" ,"LY" ,"MAN" ,"MEN" ,"NESS" ,"OES" ,"OID" ,"OL" ,"OLOGY" ,"OMY" ,"OR" ,"ORY"
+			,"OSE" ,"OUR" ,"OUS" ,"OUT" ,"OVER" ,"ROOM","TION","UM","UP","WAY","WISE","WOOD"};
+
+
+
+
+	public ArrayList<String> getPrefixAndSuffixes(Move move) {
+
+		StringBuilder word = new StringBuilder();
+		for (Place place : move) {
+			word.append(place.toString());
+		}
+		String moveAsString = word.toString();
+		ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
+		StringBuilder frame = new StringBuilder();
+		for (int i = 0; i < frameArray.size(); i++) {
+			frame.append(frameArray.get(i));
+		}
+
+		String frameAsString = frame.toString();
+		ArrayList<String> possiblePrefixs = new ArrayList<String>();
+		ArrayList<String> result = new ArrayList<String>();
+
+		ArrayList<Character> prefixLetters = new ArrayList<Character>();
+
+		
+		for (int i = 0; i < mostCommonPrefixesAndSuffixes.length; i++) {
+			for(int j = 0;j<mostCommonPrefixesAndSuffixes[i].length();j++) {
+				for(int k = 0;k<frameAsString.length();k++) {
+					if(frameAsString.charAt(k) == mostCommonPrefixesAndSuffixes[i].charAt(j) && !prefixLetters.contains(frameAsString.charAt(k))) {
+						prefixLetters.add(frameAsString.charAt(k));
+					}
+				}
+				
+				
+			}
+			if(prefixLetters.size() == mostCommonPrefixesAndSuffixes[i].length() && prefixLetters.size() > 0) {
+				possiblePrefixs.add(mostCommonPrefixesAndSuffixes[i]);
+			}
+			
+			prefixLetters = new ArrayList<Character>();
+			
+		}
+//		System.out.println("FRAME" + me.getFrameAsString());
+//		System.out.println("PREFIXS IN FRAME" + possiblePrefixs.toString());
+		ArrayList<Character> check = new ArrayList<Character>();
+		
+//		System.out.println(moveAsString);
+		for (int i = 0; i < possiblePrefixs.size(); i++) {
+			for (int j = 0; j < possiblePrefixs.get(i).length(); j++) {
+				for (int k = 0; k < moveAsString.length(); k++) {
+					if(possiblePrefixs.get(i).charAt(j) == moveAsString.charAt(k) && !check.contains(possiblePrefixs.get(i).charAt(j))) {
+						
+						check.add(moveAsString.charAt(k));
+					}
+					
+				}
+			}
+			
+			if(check.size() == possiblePrefixs.get(i).length() &&  check.size() > 0) {
+				result.add(possiblePrefixs.get(i));
+			}
+			
+				check = new ArrayList<Character>();
+		}
+//		
+//		System.out.println("FRAME:" + me.getFrameAsString() + "----------------MOVE" + move.toString());
+//		System.out.println("RESULT OF FUNCTION" + result.toString());
+		return result;
+	}
+    
 
     public Move getBestMove(String frame, BoardExtended boardExtended) {
         ArrayList<Character> frameArray = parseFrame(frame);
@@ -842,6 +917,7 @@ public class Gooses implements BotAPI {
                 if (frame.contains("Q") || frame.contains("U")) {
                     boolean isQ = false;
                     boolean isU = false;
+                    boolean isS = false;
                     for (Place tempPlace : tempPlaces) {
 
                         if (tempPlace.toString().equals("Q")) {
@@ -851,8 +927,14 @@ public class Gooses implements BotAPI {
                         if (tempPlace.toString().equals("U")) {
                             isU = true;
                         }
+                        
+                        if (tempPlace.toString().equals("S")) {
+                            tempScore = tempScore - 20;
+                        }
+                        
+                        
                     }
-                    if (isQ && isU)
+                    if (isQ || isU)
                         tempScore += 10;
                 }
                 frameArray = parseFrame(frame);
@@ -879,17 +961,22 @@ public class Gooses implements BotAPI {
                 if (frameArray.contains('E')) {
                     vowels++;
                 }
+                
 
                 tempScore += VCMix[vowels][frameArray.size() - vowels];
                 if (tempScore > bestMoveScore) {
                     bestMoveScore = tempScore;
                     bestMove = move;
                 }
+               
+                if(getPrefixAndSuffixes(move).size() > 0 ) {
+                	tempScore = tempScore - 6;
+                }
             }
         }
-        if(bestMoveScore < 2) {
-            return null;
-        }
+//        if(bestMoveScore < 2) {
+//            return null;
+//        }
         return bestMove;
     }
 
@@ -902,7 +989,10 @@ public class Gooses implements BotAPI {
     private int getPool() {
         String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2).split("\n");
         String lastPlay = lastPlayArr[1];
-
+        
+        
+        
+        
         return Integer.parseInt(lastPlay.split(" ")[2]);
     }
 
@@ -910,15 +1000,15 @@ public class Gooses implements BotAPI {
         ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
         StringBuilder command = new StringBuilder();
          
-        try {
-			if(checkBingo()) {
-				System.out.println("Bingo");
-				System.out.println(exchangeMe);
-				return exchangeMe;
-			}
-		} catch (IOException e) {
-			System.out.print("triggered");
-		}
+//        try {
+//			if(checkBingo()) {
+//				System.out.println("Bingo");
+//				System.out.println(exchangeMe);
+//				return exchangeMe;
+//			}
+//		} catch (IOException e) {
+//			System.out.print("triggered");
+//		}
         // PREFIX /SUFFIX STUFF
         int threshold = 23;
         while(command.toString().isEmpty()) {
@@ -1011,7 +1101,7 @@ public class Gooses implements BotAPI {
 		return false;
 	}
 
-    public String getCommand() {
+	public String getCommand() {
         String command;
         if (turnCount == 0) {
             isPoolUpdated = false;
@@ -1026,11 +1116,15 @@ public class Gooses implements BotAPI {
                 } catch (NullPointerException ex) {
                     if (isPoolUpdated) {
 
+                    	
                         String tilesToReplace = getExchangeCommand();
-                        if (getPool() >= tilesToReplace.length()) {
+                        
+                        if (getPool() >= tilesToReplace.length() && getPool() != 0 && tilesToReplace.length() != 0) {
                             command = "EXCHANGE " + tilesToReplace;
+                        } else if (getPool() > 0) {
+                            command = "EXCHANGE " + tilesToReplace.substring(0, getPool());
                         } else {
-                            command = "PASS";
+                        	command = "PASS";
                         }
                     } else {
                         command = "POOL";
