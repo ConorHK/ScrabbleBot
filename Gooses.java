@@ -20,7 +20,10 @@ public class Gooses implements BotAPI {
     private boolean isPoolUpdated;
     private HashMap<Character, Integer> tilePriority;
 	private final static ArrayList<String> seven = new ArrayList<String>();
-    public static String exchangeMe;
+    private static String exchangeMe;
+    private static int conseqBingos;
+    
+    
 
 
 
@@ -744,23 +747,23 @@ public class Gooses implements BotAPI {
 
     /* --------------------------  */
     /* POINTS */
-    private int getWordPoints(Word word) {
-        int wordValue = 0;
-        int wordMultipler = 1;
-        int r = word.getFirstRow();
-        int c = word.getFirstColumn();
-        for (int i = 0; i < word.length(); i++) {
-            int letterValue = (new Tile(word.getLetter(i)).getValue());
-            wordValue = wordValue + letterValue * board.getSquareCopy(r, c).getLetterMuliplier();
-            wordMultipler = wordMultipler * board.getSquareCopy(r, c).getWordMultiplier();
-        }
-        if (word.isHorizontal()) {
-            c++;
-        } else {
-            r++;
-        }
-        return wordValue * wordMultipler;
-    }
+	private int getWordPoints(Word word) {
+		int wordValue = 0;
+		int wordMultipler = 1;
+		int r = word.getFirstRow();
+		int c = word.getFirstColumn();
+		for (int i = 0; i < word.length(); i++) {
+			int letterValue = (new Tile(word.getLetter(i)).getValue());
+			wordValue = wordValue + letterValue * board.getSquareCopy(r, c).getLetterMuliplier();
+			wordMultipler = wordMultipler * board.getSquareCopy(r, c).getWordMultiplier();
+			if (word.isHorizontal()) {
+				c++;
+			} else {
+				r++;
+			}
+		}
+		return wordValue * wordMultipler;
+	}
 
     public int getAllPoints(ArrayList<Word> words) {
         int points = 0;
@@ -997,18 +1000,10 @@ public class Gooses implements BotAPI {
     }
 
     public String getExchangeCommand() {
+    	
         ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
         StringBuilder command = new StringBuilder();
-         
-//        try {
-//			if(checkBingo()) {
-//				System.out.println("Bingo");
-//				System.out.println(exchangeMe);
-//				return exchangeMe;
-//			}
-//		} catch (IOException e) {
-//			System.out.print("triggered");
-//		}
+
         // PREFIX /SUFFIX STUFF
         int threshold = 23;
         while(command.toString().isEmpty()) {
@@ -1066,6 +1061,7 @@ public class Gooses implements BotAPI {
     }
     
 	private Boolean checkBingo() throws FileNotFoundException, IOException {
+		conseqBingos++;
 		String frameToParse = me.getFrameAsString();
 		ArrayList<Character> frame = parseFrame(frameToParse);
 
@@ -1079,24 +1075,23 @@ public class Gooses implements BotAPI {
 				}
 			}
 		}
-		
+		int same = 0;
+		exchangeMe = " ";
 		for (int j = 0; j < seven.size(); j++) {
 			String test = seven.get(j);
-			int same = 0;
-			exchangeMe = "";
+			same = 0;
+			exchangeMe = " ";
 			for (int i = 0; i < frame.size(); i++) {
 				if (test.contains(frame.get(i).toString())) {
 					same++;
-				} 
-				else {
-					exchangeMe = frame.get(i).toString();
+				} else {
+					exchangeMe = frame.get(i).toString().trim();
 				}
-				if (same == 6) {
+				if (same == 6 && !exchangeMe.contains("_") && !exchangeMe.contains(" ")) {
+					same = 0;
 					return true;
 				}
-
 			}
-
 		}
 		return false;
 	}
@@ -1118,7 +1113,15 @@ public class Gooses implements BotAPI {
 
                     	
                         String tilesToReplace = getExchangeCommand();
-                        
+                        try {
+							if(checkBingo()) {
+								tilesToReplace = exchangeMe;
+								System.out.println("Bingo");
+							}
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}                       
                         if (getPool() >= tilesToReplace.length() && getPool() != 0 && tilesToReplace.length() != 0) {
                             command = "EXCHANGE " + tilesToReplace;
                         } else if (getPool() > 0) {
