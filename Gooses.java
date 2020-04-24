@@ -19,12 +19,9 @@ public class Gooses implements BotAPI {
     private GADDAG gaddag;
     private boolean isPoolUpdated;
     private HashMap<Character, Integer> tilePriority;
-	private final static ArrayList<String> seven = new ArrayList<String>();
+    private final static ArrayList<String> seven = new ArrayList<String>();
     private static String exchangeMe;
-    
-    
-
-
+    private ArrayList<Coordinates> newLetterCoords;
 
     Gooses(PlayerAPI me, OpponentAPI opponent, BoardAPI board, UserInterfaceAPI ui, DictionaryAPI dictionary)
             throws FileNotFoundException {
@@ -661,13 +658,13 @@ public class Gooses implements BotAPI {
     /* END OF NESTED GADDAG CLASS */
 
     /* Connecting word Validation: */
-    public ArrayList<Word> getAllWords(Word mainWord) {
+   /* public ArrayList<Word> getAllWords(Word mainWord) {
         ArrayList<Word> words = new ArrayList<>();
         words.add(mainWord);
         int r = mainWord.getFirstRow();
         int c = mainWord.getFirstColumn();
         for (int i = 0; i < mainWord.length(); i++) {
-            if (isAdditionalWord(r, c, mainWord.isHorizontal())) {
+            if (isAdditionalWord(r, c, mainWord.isHorizontal(), duplicateBoard)) {
                 Square[][] possibleBoard = duplicateBoard(mainWord);
                 words.add(getAdditionalWord(r, c, mainWord.isHorizontal(), possibleBoard));
             }
@@ -678,9 +675,9 @@ public class Gooses implements BotAPI {
             }
         }
         return words;
-    }
+    }*/
 
-    private boolean isAdditionalWord(int r, int c, boolean isHorizontal) {
+    /*private boolean isAdditionalWord(int r, int c, boolean isHorizontal) {
         if ((isHorizontal && ((r > 0 && board.getSquareCopy(r - 1, c).isOccupied()) || (r < Board.BOARD_SIZE - 1 && board.getSquareCopy(r + 1, c).isOccupied()))) || (!isHorizontal && ((c > 0 && board.getSquareCopy(r, c - 1).isOccupied()) || (c < Board.BOARD_SIZE - 1 && board.getSquareCopy(r, c + 1).isOccupied())))) {
             return true;
         }
@@ -717,10 +714,11 @@ public class Gooses implements BotAPI {
             }
         }
         return new Word(firstRow, firstCol, !mainWordIsHorizontal, letters.toString());
-    }
+    }*/
 
 
     private Square[][] duplicateBoard(Word word) {
+        newLetterCoords = new ArrayList<>();
         Square[][] output = new Square[15][15];
         for (int i = 0; i < Board.BOARD_SIZE; i++) {
             for (int j = 0; j < Board.BOARD_SIZE; j++) {
@@ -734,6 +732,7 @@ public class Gooses implements BotAPI {
                 char letter = word.getLetter(i);
                 Tile tile = new Tile(letter);
                 output[r][c].add(tile);
+                newLetterCoords.add(new Coordinates(r, c));
             }
             if (word.isHorizontal()) {
                 c++;
@@ -744,32 +743,97 @@ public class Gooses implements BotAPI {
         return output;
     }
 
-    /* --------------------------  */
     /* POINTS */
-	private int getWordPoints(Word word) {
-		int wordValue = 0;
-		int wordMultipler = 1;
-		int r = word.getFirstRow();
-		int c = word.getFirstColumn();
-		for (int i = 0; i < word.length(); i++) {
-			int letterValue = (new Tile(word.getLetter(i)).getValue());
-			wordValue = wordValue + letterValue * board.getSquareCopy(r, c).getLetterMuliplier();
-			wordMultipler = wordMultipler * board.getSquareCopy(r, c).getWordMultiplier();
-			if (word.isHorizontal()) {
-				c++;
-			} else {
-				r++;
-			}
-		}
-		return wordValue * wordMultipler;
-	}
+    private boolean isAdditionalWord(int r, int c, boolean isHorizontal, Square[][] duplicateBoard) {
+        if ((isHorizontal &&
+                ((r>0 && duplicateBoard[r-1][c].isOccupied()) || (r< Board.BOARD_SIZE-1 && duplicateBoard[r+1][c].isOccupied()))) ||
+                (!isHorizontal &&
+                        ((c>0 && duplicateBoard[r][c-1].isOccupied()) || (c< Board.BOARD_SIZE-1 && duplicateBoard[r][c+1].isOccupied()))) ) {
+            return true;
+        }
+        return false;
+    }
 
-    public int getAllPoints(ArrayList<Word> words) {
+    private Word getAdditionalWord(int mainWordRow, int mainWordCol, boolean mainWordIsHorizontal, Square[][] duplicateBoard) {
+        int firstRow = mainWordRow;
+        int firstCol = mainWordCol;
+        // search up or left for the first letter
+        while (firstRow >= 0 && firstCol >= 0 && duplicateBoard[firstRow][firstCol].isOccupied()) {
+            if (mainWordIsHorizontal) {
+                firstRow--;
+            } else {
+                firstCol--;
+            }
+        }
+        // went too far
+        if (mainWordIsHorizontal) {
+            firstRow++;
+        } else {
+            firstCol++;
+        }
+        // collect the letters by moving down or right
+        String letters = "";
+        int r = firstRow;
+        int c = firstCol;
+        while (r< Board.BOARD_SIZE && c< Board.BOARD_SIZE && duplicateBoard[r][c].isOccupied()) {
+            letters = letters + duplicateBoard[r][c].getTile().getLetter();
+            if (mainWordIsHorizontal) {
+                r++;
+            } else {
+                c++;
+            }
+        }
+        return new Word (firstRow, firstCol, !mainWordIsHorizontal, letters);
+    }
+
+    public ArrayList<Word> getAllWords(Word mainWord, Square[][] duplicateBoard) {
+        ArrayList<Word> words = new ArrayList<>();
+        words.add(mainWord);
+        int r = mainWord.getFirstRow();
+        int c = mainWord.getFirstColumn();
+        for (int i=0; i<mainWord.length(); i++) {
+            if (newLetterCoords.contains(new Coordinates(r,c))) {
+                if (isAdditionalWord(r, c, mainWord.isHorizontal(), duplicateBoard)) {
+                    words.add(getAdditionalWord(r, c, mainWord.isHorizontal(), duplicateBoard));
+                }
+            }
+            if (mainWord.isHorizontal()) {
+                c++;
+            } else {
+                r++;
+            }
+        }
+        return words;
+    }
+
+    private int getWordPoints(Word word, Square[][] duplicateBoard) {
+        int wordValue = 0;
+        int wordMultipler = 1;
+        int r = word.getFirstRow();
+        int c = word.getFirstColumn();
+        for (int i = 0; i<word.length(); i++) {
+            int letterValue = duplicateBoard[r][c].getTile().getValue();
+            if (newLetterCoords.contains(new Coordinates(r,c))) {
+                wordValue = wordValue + letterValue * duplicateBoard[r][c].getLetterMuliplier();
+                wordMultipler = wordMultipler * duplicateBoard[r][c].getWordMultiplier();
+            } else {
+                wordValue = wordValue + letterValue;
+            }
+            if (word.isHorizontal()) {
+                c++;
+            } else {
+                r++;
+            }
+        }
+        return wordValue * wordMultipler;
+    }
+
+    public int getAllPoints(ArrayList<Word> words, Square[][] duplicateBoard) {
         int points = 0;
         for (Word word : words) {
-            points = points + getWordPoints(word);
+            points = points + getWordPoints(word, duplicateBoard);
         }
-        if (words.get(0).length() == Frame.MAX_TILES) {
+        if (newLetterCoords.size() == Frame.MAX_TILES) {
             points = points + 50;
         }
         return points;
@@ -819,81 +883,7 @@ public class Gooses implements BotAPI {
         }
         return output;
     }
-    
-    String[] mostCommonPrefixesAndSuffixes = {"ANTE","ANTI","AUTO","BE","BIO","BY","CO","COM","CON","DE","DIS","DOWN","DYS","EM","EN","EPI","EX","FOR","FORE","IM","INTER","IN","INTER","ISO","MEGA","MID","MIS",
-			"MONO","NEO","NON","OB","OFF","ON","OUT","OVER","PAR","PER","POST","PRE","PRO","RE","SEMI","SIDE","SUB","SUPER","TELE","TOP","TRI","UN","UNDER","UP","ABLE","ACLE","AGE" ,"AL", "ALLY", "ANA", "ANCE", "AND", "ANE", "ANT", "ARY", "ASE", "AUX"
-			,"BACK" ,"BALL" ,"BELL" ,"BOOK" ,"BOY","DAY","DOM","EAU" , "ED" ,"EE" ,"ENCE" ,"ENT" ,"ER" ,"ERY" ,"ET" ,"ELLA" ,"ETTE" ,"ESS" ,"FORM" ,"FUL" ,"FULLY" ,"GENY" ,"HEAD" ,"HOOD" ,"IBLE" ,"IC" ,"ICES" ,"ICLE" ,"IDE" ,"IER" ,"IES" ,"IEST" ,"IFY" 
-			,"ILE" ,"ILIA" ,"ILY" ,"INE" ,"ING" ,"ION" ,"IOUS" ,"ISE" ,"ISH","ISM" ,"IST" ,"ITE" ,"ITIC" ,"ITY" ,"IVE" ,"IX" ,"IZE" ,"KIN" ,"LAND" ,"LESS" ,"LET" ,"LIKE" ,"LINE" ,"LING" ,"LONG" ,"LY" ,"MAN" ,"MEN" ,"NESS" ,"OES" ,"OID" ,"OL" ,"OLOGY" ,"OMY" ,"OR" ,"ORY"
-			,"OSE" ,"OUR" ,"OUS" ,"OUT" ,"OVER" ,"ROOM","TION","UM","UP","WAY","WISE","WOOD"};
 
-
-
-
-	public ArrayList<String> getPrefixAndSuffixes(Move move) {
-
-		StringBuilder word = new StringBuilder();
-		for (Place place : move) {
-			word.append(place.toString());
-		}
-		String moveAsString = word.toString();
-		ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
-		StringBuilder frame = new StringBuilder();
-		for (int i = 0; i < frameArray.size(); i++) {
-			frame.append(frameArray.get(i));
-		}
-
-		String frameAsString = frame.toString();
-		ArrayList<String> possiblePrefixs = new ArrayList<String>();
-		ArrayList<String> result = new ArrayList<String>();
-
-		ArrayList<Character> prefixLetters = new ArrayList<Character>();
-
-		
-		for (int i = 0; i < mostCommonPrefixesAndSuffixes.length; i++) {
-			for(int j = 0;j<mostCommonPrefixesAndSuffixes[i].length();j++) {
-				for(int k = 0;k<frameAsString.length();k++) {
-					if(frameAsString.charAt(k) == mostCommonPrefixesAndSuffixes[i].charAt(j) && !prefixLetters.contains(frameAsString.charAt(k))) {
-						prefixLetters.add(frameAsString.charAt(k));
-					}
-				}
-				
-				
-			}
-			if(prefixLetters.size() == mostCommonPrefixesAndSuffixes[i].length() && prefixLetters.size() > 0) {
-				possiblePrefixs.add(mostCommonPrefixesAndSuffixes[i]);
-			}
-			
-			prefixLetters = new ArrayList<Character>();
-			
-		}
-//		System.out.println("FRAME" + me.getFrameAsString());
-//		System.out.println("PREFIXS IN FRAME" + possiblePrefixs.toString());
-		ArrayList<Character> check = new ArrayList<Character>();
-		
-//		System.out.println(moveAsString);
-		for (int i = 0; i < possiblePrefixs.size(); i++) {
-			for (int j = 0; j < possiblePrefixs.get(i).length(); j++) {
-				for (int k = 0; k < moveAsString.length(); k++) {
-					if(possiblePrefixs.get(i).charAt(j) == moveAsString.charAt(k) && !check.contains(possiblePrefixs.get(i).charAt(j))) {
-						
-						check.add(moveAsString.charAt(k));
-					}
-					
-				}
-			}
-			
-			if(check.size() == possiblePrefixs.get(i).length() &&  check.size() > 0) {
-				result.add(possiblePrefixs.get(i));
-			}
-			
-				check = new ArrayList<Character>();
-		}
-//		
-//		System.out.println("FRAME:" + me.getFrameAsString() + "----------------MOVE" + move.toString());
-//		System.out.println("RESULT OF FUNCTION" + result.toString());
-		return result;
-	}
-    
 
     public Move getBestMove(String frame, BoardExtended boardExtended) {
         ArrayList<Character> frameArray = parseFrame(frame);
@@ -902,83 +892,21 @@ public class Gooses implements BotAPI {
         List<Move> moves = validMoves(this.gaddag.findMoves(gaddag.getRoot(), frameArray, boardExtended, this.board));
         Move bestMove = null;
         int bestMoveScore = 0;
-        int[][] VCMix = {
-                {0, 0, -1, -2, -3, -4, -5},
-                {-1, 1, 1, 0, -1, -2},
-                {-2, 0, 2, 2, 1},
-                {-3, -1, 1, 3},
-                {-4, -2, 0},
-                {-5, -3},
-                {-6}
-        };
         for (Move move : moves) {
-            ArrayList<Word> allWords = getAllWords(makeWordFromMove(move));
+            Square[][] possibleBoard = duplicateBoard(makeWordFromMove(move));
+            ArrayList<Word> allWords = getAllWords(makeWordFromMove(move), possibleBoard);
             if (dictionary.areWords(allWords)) {
-                int tempScore = getAllPoints(allWords);
-                List<Place> tempPlaces = move.places;
-                if (frame.contains("Q") || frame.contains("U")) {
-                    boolean isQ = false;
-                    boolean isU = false;
-                    boolean isS = false;
-                    for (Place tempPlace : tempPlaces) {
-
-                        if (tempPlace.toString().equals("Q")) {
-                            isQ = true;
-                        }
-
-                        if (tempPlace.toString().equals("U")) {
-                            isU = true;
-                        }
-                        
-                        if (tempPlace.toString().equals("S")) {
-                            tempScore = tempScore - 20;
-                        }
-                        
-                        
-                    }
-                    if (isQ || isU)
-                        tempScore += 10;
-                }
-                frameArray = parseFrame(frame);
-                for (Place tempPlace : tempPlaces) {
-                    for (int j = 0; j < frameArray.size(); j++) {
-                        if (tempPlace.toString().toCharArray()[0] == frameArray.get(j)) {
-                            frameArray.remove(j);
-                        }
-                    }
-                }
-                int vowels = 0;
-                if (frameArray.contains('A')) {
-                    vowels++;
-                }
-                if (frameArray.contains('I')) {
-                    vowels++;
-                }
-                if (frameArray.contains('O')) {
-                    vowels++;
-                }
-                if (frameArray.contains('U')) {
-                    vowels++;
-                }
-                if (frameArray.contains('E')) {
-                    vowels++;
-                }
-                
-
-                tempScore += VCMix[vowels][frameArray.size() - vowels];
+                duplicateBoard(makeWordFromMove(move));
+                int tempScore = getAllPoints(getAllWords(makeWordFromMove(move), possibleBoard), possibleBoard);
                 if (tempScore > bestMoveScore) {
                     bestMoveScore = tempScore;
                     bestMove = move;
                 }
-               
-                if(getPrefixAndSuffixes(move).size() > 0 ) {
-                	tempScore = tempScore - 6;
-                }
             }
         }
-//        if(bestMoveScore < 2) {
-//            return null;
-//        }
+        if (bestMoveScore < 2) {
+            return null;
+        }
         return bestMove;
     }
 
@@ -991,25 +919,21 @@ public class Gooses implements BotAPI {
     private int getPool() {
         String[] lastPlayArr = ui.getAllInfo().substring(ui.getAllInfo().lastIndexOf('>') + 2).split("\n");
         String lastPlay = lastPlayArr[1];
-        
-        
-        
-        
         return Integer.parseInt(lastPlay.split(" ")[2]);
     }
 
     public String getExchangeCommand() {
-    	
+
         ArrayList<Character> frameArray = parseFrame(me.getFrameAsString());
         StringBuilder command = new StringBuilder();
 
         // PREFIX /SUFFIX STUFF
         int threshold = 23;
-        while(command.toString().isEmpty()) {
+        while (command.toString().isEmpty()) {
             for (int i = 0; i < frameArray.size(); i++) {
                 if (tilePriority.get(frameArray.get(i)) > threshold) {
                     command.append(frameArray.remove(i));
-                    if(command.length() == getPool()) {
+                    if (command.length() == getPool()) {
                         break;
                     }
                 }
@@ -1055,46 +979,47 @@ public class Gooses implements BotAPI {
 
         isHorizontal = direction == 'A';
         Word words = new Word(row, column, isHorizontal, word);
-        ArrayList<Word> toCheck = getAllWords(words);
+        Square[][] currentBoard = duplicateBoard(words);
+        ArrayList<Word> toCheck = getAllWords(words, currentBoard);
         return !dictionary.areWords(toCheck);
     }
-    
-	private Boolean checkBingo() throws FileNotFoundException, IOException {
-		String frameToParse = me.getFrameAsString();
-		ArrayList<Character> frame = parseFrame(frameToParse);
 
-		File file = new File("csw.txt");
+    private Boolean checkBingo() throws FileNotFoundException, IOException {
+        String frameToParse = me.getFrameAsString();
+        ArrayList<Character> frame = parseFrame(frameToParse);
 
-		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-			String line;
-			while ((line = br.readLine()) != null) {
-				if (line.length() == 7) {
-					seven.add(line);
-				}
-			}
-		}
-		int same = 0;
-		exchangeMe = " ";
-		for (int j = 0; j < seven.size(); j++) {
-			String test = seven.get(j);
-			same = 0;
-			exchangeMe = " ";
-			for (int i = 0; i < frame.size(); i++) {
-				if (test.contains(frame.get(i).toString())) {
-					same++;
-				} else {
-					exchangeMe = frame.get(i).toString().trim();
-				}
-				if (same == 6 && !exchangeMe.contains("_") && !exchangeMe.contains(" ")) {
-					same = 0;
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+        File file = new File("csw.txt");
 
-	public String getCommand() {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.length() == 7) {
+                    seven.add(line);
+                }
+            }
+        }
+        int same = 0;
+        exchangeMe = " ";
+        for (int j = 0; j < seven.size(); j++) {
+            String test = seven.get(j);
+            same = 0;
+            exchangeMe = " ";
+            for (int i = 0; i < frame.size(); i++) {
+                if (test.contains(frame.get(i).toString())) {
+                    same++;
+                } else {
+                    exchangeMe = frame.get(i).toString().trim();
+                }
+                if (same == 6 && !exchangeMe.contains("_") && !exchangeMe.contains(" ")) {
+                    same = 0;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public String getCommand() {
         String command;
         if (turnCount == 0) {
             isPoolUpdated = false;
@@ -1108,23 +1033,22 @@ public class Gooses implements BotAPI {
                     command = getBestMove(me.getFrameAsString(), boardExtended).toString();
                 } catch (NullPointerException ex) {
                     if (isPoolUpdated) {
-
-                    	
                         String tilesToReplace = getExchangeCommand();
                         try {
-							if(checkBingo()) {
-								tilesToReplace = exchangeMe;
-							}
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}                       
+                            if (checkBingo()) {
+                                System.out.println("potential bingo");
+                                tilesToReplace = exchangeMe;
+                            }
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
                         if (getPool() >= tilesToReplace.length() && getPool() != 0 && tilesToReplace.length() != 0) {
                             command = "EXCHANGE " + tilesToReplace;
                         } else if (getPool() > 0) {
                             command = "EXCHANGE " + tilesToReplace.substring(0, getPool());
                         } else {
-                        	command = "PASS";
+                            command = "PASS";
                         }
                     } else {
                         command = "POOL";
