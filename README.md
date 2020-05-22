@@ -5,3 +5,5 @@ Scrabble driver code provided by Professor Chris Bleakly. Our team (Gooses) bot 
 
 **Result**: 7th place out of 46 teams.
 Our biggest downfall was the lack of blank tile implementation. We adopted a strategy of trading away any blanks we got, however the blank can be used to make very high point plays, which our bot couldn't compete against.
+
+GoosesOld is a previous iteration of the our bot so we could play it against itself and make tweaks.
