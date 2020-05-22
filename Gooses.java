@@ -182,136 +182,17 @@ public class Gooses implements BotAPI {
                     if (boardDupe.isAnchor(i, j)) {
                         if (board.getSquareCopy(i + 1, j).isOccupied() || board.getSquareCopy(i - 1, j).isOccupied()) {
                             boardDupe.getSquareExtended(i, j).getLegalHorizontalSet().clear();
-                            getHorizontalCrossSet(i, j, g, board, boardDupe);
+                            //getHorizontalCrossSet(i, j, g, board, boardDupe);
                         }
                         if (board.getSquareCopy(i, j + 1).isOccupied() || board.getSquareCopy(i, j - 1).isOccupied()) {
                             boardDupe.getSquareExtended(i, j).getLegalVerticalSet().clear();
-                            computeVerticalCrossSet(i, j, g, board, boardDupe);
+                            //computeVerticalCrossSet(i, j, g, board, boardDupe);
                         }
                     }
                 }
             }
         }
 
-        private void getHorizontalCrossSet(int row, int column, Node root, BoardAPI board, BoardExtended boardExtended) {
-            Node word = root;
-            // gets prefix hook
-            if (board.getSquareCopy(row - 1, column).isOccupied() && board.getSquareCopy(row + 1, column).isOccupied()) { // if there is a tile left & right of position
-                int adjacentRow = row - 1;
-                while (board.getSquareCopy(adjacentRow, column).isOccupied()) { // go to start of prefix
-                    word = word.getChild(board.getSquareCopy(adjacentRow, column).getTile().getLetter());
-                    if (word == null) {
-                        return;
-                    }
-                    adjacentRow--;
-                }
-
-                // construct suffix
-                word = word.getChild('$');
-                if (word != null) {
-                    Node base = word;
-                    for (char c = 'A'; c <= 'Z'; c++) {
-                        word = base;
-                        word = word.getChild(c);
-                        adjacentRow = row + 1;
-                        while (word != null && board.getSquareCopy(adjacentRow + 1, column).isOccupied()) {
-                            word = word.getChild(board.getSquareCopy(adjacentRow, column).getTile().getLetter());
-                            adjacentRow++;
-                        }
-                        if (word != null) {
-                            if (word.isEnd(board.getSquareCopy(adjacentRow, column).getTile().getLetter())) {
-                                duplicateSquares[row][column].addLegalHorizontalSet(c);
-                            }
-                        }
-                    }
-                }
-            } else if (board.getSquareCopy(row - 1, column).isOccupied()) { // if left is occupied
-                int adjacentRow = row - 1;
-                while (board.getSquareCopy(adjacentRow, column).isOccupied()) {
-                    word = word.getChild(board.getSquareCopy(adjacentRow, column).getTile().getLetter());
-                    if (word == null) {
-                        return;
-                    }
-                    adjacentRow--;
-                }
-                word = word.getChild('$');
-                if (word != null) { //i.e word complete - no suffix
-                    boardExtended.getSquareExtended(row, column).addAllToLegalHorizontal(word.getEndSet());
-                }
-            } else if (board.getSquareCopy(row + 1, column).isOccupied()) { // if right is occupied
-                int adjacentRow = row + 1;
-                while (board.getSquareCopy(adjacentRow + 1, column).isOccupied()) { // go to end of occupied right-side tiles
-                    adjacentRow++;
-                }
-                while (adjacentRow > row) { // get all letters for prefix
-                    word = word.getChild(board.getSquareCopy(adjacentRow, column).getTile().getLetter());
-                    if (word == null) {
-                        return;
-                    }
-                    adjacentRow--;
-                }
-                boardExtended.getSquareExtended(row, column).addAllToLegalHorizontal(word.getEndSet());
-            }
-        }
-
-        // works same as above
-        private void computeVerticalCrossSet(int i, int j, Node root, BoardAPI board, BoardExtended boardDupe) {
-            Node word = root;
-            if (board.getSquareCopy(i, j - 1).isOccupied() && board.getSquareCopy(i, j + 1).isOccupied()) {
-                int adjacentColumn = j - 1;
-                while (board.getSquareCopy(i, adjacentColumn).isOccupied()) {
-                    word = word.getChild(board.getSquareCopy(i, adjacentColumn).getTile().getLetter());
-                    if (word == null) {
-                        return;
-                    }
-                    adjacentColumn--;
-                }
-                word = word.getChild('$');
-                if (word != null) {
-                    Node base = word;
-                    for (char c = 'A'; c <= 'Z'; c++) {
-                        word = base;
-                        word = word.getChild(c);
-                        adjacentColumn = j + 1;
-                        while (word != null && board.getSquareCopy(i, adjacentColumn + 1).isOccupied()) {
-                            word = word.getChild(board.getSquareCopy(i, adjacentColumn).getTile().getLetter());
-                            adjacentColumn++;
-                        }
-                        if (word != null) {
-                            if (word.isEnd(board.getSquareCopy(i, adjacentColumn).getTile().getLetter())) {
-                                boardDupe.getSquareExtended(i, j).addLegalVerticalSet(c);
-                            }
-                        }
-                    }
-                }
-            } else if (board.getSquareCopy(i, j - 1).isOccupied()) {
-                int adjacentColumn = j - 1;
-                while (board.getSquareCopy(i, adjacentColumn).isOccupied()) {
-                    word = word.getChild(board.getSquareCopy(i, adjacentColumn).getTile().getLetter());
-                    if (word == null) {
-                        return;
-                    }
-                    adjacentColumn--;
-                }
-                word = word.getChild('$');
-                if (word != null) {
-                    boardDupe.getSquareExtended(i, j).addAllToLegalVertical(word.getEndSet());
-                }
-            } else if (board.getSquareCopy(i, j + 1).isOccupied()) {
-                int adjacentColumn = j + 1;
-                while (board.getSquareCopy(i, adjacentColumn + 1).isOccupied()) {
-                    adjacentColumn++;
-                }
-                while (adjacentColumn > j) {
-                    word = word.getChild(board.getSquareCopy(i, adjacentColumn).getTile().getLetter());
-                    if (word == null) {
-                        return;
-                    }
-                    adjacentColumn--;
-                }
-                boardDupe.getSquareExtended(i, j).addAllToLegalVertical(word.getEndSet());
-            }
-        }
     }
     /* -------------------- BOARD EXTENSION COMPLETE ------------- */
 
@@ -495,7 +376,6 @@ public class Gooses implements BotAPI {
         }
 
         public static Node build(Scanner words) {
-//            System.out.println("Building GADDAG...");
             Node root = new Node();
             while (words.hasNext()) {
                 Node node = root;
@@ -514,7 +394,6 @@ public class Gooses implements BotAPI {
                     node.addNode(word.charAt(m + 1), temp);
                 }
             }
-//            System.out.println("GADDAG done!");
             return root;
         }
 
@@ -657,66 +536,6 @@ public class Gooses implements BotAPI {
     }
     /* END OF NESTED GADDAG CLASS */
 
-    /* Connecting word Validation: */
-   /* public ArrayList<Word> getAllWords(Word mainWord) {
-        ArrayList<Word> words = new ArrayList<>();
-        words.add(mainWord);
-        int r = mainWord.getFirstRow();
-        int c = mainWord.getFirstColumn();
-        for (int i = 0; i < mainWord.length(); i++) {
-            if (isAdditionalWord(r, c, mainWord.isHorizontal(), duplicateBoard)) {
-                Square[][] possibleBoard = duplicateBoard(mainWord);
-                words.add(getAdditionalWord(r, c, mainWord.isHorizontal(), possibleBoard));
-            }
-            if (mainWord.isHorizontal()) {
-                c++;
-            } else {
-                r++;
-            }
-        }
-        return words;
-    }*/
-
-    /*private boolean isAdditionalWord(int r, int c, boolean isHorizontal) {
-        if ((isHorizontal && ((r > 0 && board.getSquareCopy(r - 1, c).isOccupied()) || (r < Board.BOARD_SIZE - 1 && board.getSquareCopy(r + 1, c).isOccupied()))) || (!isHorizontal && ((c > 0 && board.getSquareCopy(r, c - 1).isOccupied()) || (c < Board.BOARD_SIZE - 1 && board.getSquareCopy(r, c + 1).isOccupied())))) {
-            return true;
-        }
-        return false;
-    }
-
-    private Word getAdditionalWord(int mainWordRow, int mainWordCol, boolean mainWordIsHorizontal, Square[][] possibleBoard) {
-        int firstRow = mainWordRow;
-        int firstCol = mainWordCol;
-        // search up or left for the first letter
-        while (firstRow >= 0 && firstCol >= 0 && possibleBoard[firstRow][firstCol].isOccupied()) {
-            if (mainWordIsHorizontal) {
-                firstRow--;
-            } else {
-                firstCol--;
-            }
-        }
-        // went too far
-        if (mainWordIsHorizontal) {
-            firstRow++;
-        } else {
-            firstCol++;
-        }
-        // collect the letters by moving down or right
-        StringBuilder letters = new StringBuilder();
-        int r = firstRow;
-        int c = firstCol;
-        while (r < Board.BOARD_SIZE && c < Board.BOARD_SIZE && possibleBoard[r][c].isOccupied()) {
-            letters.append(possibleBoard[r][c].getTile().getLetter());
-            if (mainWordIsHorizontal) {
-                r++;
-            } else {
-                c++;
-            }
-        }
-        return new Word(firstRow, firstCol, !mainWordIsHorizontal, letters.toString());
-    }*/
-
-
     private Square[][] duplicateBoard(Word word) {
         newLetterCoords = new ArrayList<>();
         Square[][] output = new Square[15][15];
@@ -743,7 +562,7 @@ public class Gooses implements BotAPI {
         return output;
     }
 
-    /* POINTS */
+    /* CONNECTING WORDS */
     private boolean isAdditionalWord(int r, int c, boolean isHorizontal, Square[][] duplicateBoard) {
         if ((isHorizontal &&
                 ((r>0 && duplicateBoard[r-1][c].isOccupied()) || (r< Board.BOARD_SIZE-1 && duplicateBoard[r+1][c].isOccupied()))) ||
@@ -806,6 +625,7 @@ public class Gooses implements BotAPI {
         return words;
     }
 
+    /* POINTS */
     private int getWordPoints(Word word, Square[][] duplicateBoard) {
         int wordValue = 0;
         int wordMultipler = 1;
@@ -984,7 +804,7 @@ public class Gooses implements BotAPI {
         return !dictionary.areWords(toCheck);
     }
 
-    private Boolean checkBingo() throws FileNotFoundException, IOException {
+    private Boolean checkBingo() throws IOException {
         String frameToParse = me.getFrameAsString();
         ArrayList<Character> frame = parseFrame(frameToParse);
 
@@ -1011,7 +831,6 @@ public class Gooses implements BotAPI {
                     exchangeMe = frame.get(i).toString().trim();
                 }
                 if (same == 6 && !exchangeMe.contains("_") && !exchangeMe.contains(" ")) {
-                    same = 0;
                     return true;
                 }
             }
@@ -1036,11 +855,9 @@ public class Gooses implements BotAPI {
                         String tilesToReplace = getExchangeCommand();
                         try {
                             if (checkBingo()) {
-                                System.out.println("potential bingo");
                                 tilesToReplace = exchangeMe;
                             }
                         } catch (IOException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                         if (getPool() >= tilesToReplace.length() && getPool() != 0 && tilesToReplace.length() != 0) {
